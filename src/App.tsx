@@ -17,6 +17,7 @@ import Play from './pages/Play';
 import Analysis from './pages/Analysis';
 import Review from './pages/Review';
 import Profile from './pages/Profile';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const NAV = [
   { path: '', label: 'Lernpfad', ico: '◆' },
@@ -106,7 +107,7 @@ export default function App() {
         </div>
       </header>
       <main className="main" key={route.join('/')}>
-        {page(route)}
+        <ErrorBoundary resetKey={route.join('/')}>{page(route)}</ErrorBoundary>
       </main>
       <footer className="footer">
         Chessty · kostenlos & Open Source (GPL-3) · Engine: Stockfish 19 · Puzzles & Eröffnungsnamen: Lichess (CC0)

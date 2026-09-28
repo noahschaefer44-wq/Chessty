@@ -6,7 +6,7 @@ import { EvalBar } from '../components/Widgets';
 import { themeById, themeName } from '../content/themes';
 import { pickRound, BAND_NAMES, MAX_PER_ROUND, type Puzzle } from '../lib/puzzles';
 import { addReview, addXp, recordPuzzle, useProgress, getProgress } from '../lib/progress';
-import { parseUci, tryMove, sanDe } from '../lib/chess';
+import { parseUci, tryMove, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
 
@@ -238,7 +238,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
           )}
 
           {explore && lines[0] && (
-            <p className="mono">Engine: {sanDe(new Chess(fen).move(parseUci(lines[0].pv[0]))?.san ?? '')}</p>
+            <p className="mono">Engine: {sanDe(uciToSan(fen, lines[0].pv[0]))}</p>
           )}
 
           <div className="row">

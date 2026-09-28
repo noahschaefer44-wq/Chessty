@@ -3,7 +3,7 @@ import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import { EvalBar } from '../components/Widgets';
 import { engine } from '../lib/engine';
-import { tryMove, sanDe, parseUci, material } from '../lib/chess';
+import { tryMove, sanDe, uciToSan, material } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { update, addXp, useProgress } from '../lib/progress';
 import { sound } from '../lib/sound';
@@ -179,7 +179,7 @@ export default function Play() {
           </div>
           {result && <div className="feedback good"><b>{result}</b></div>}
           {helper && best && myTurn && !result && (
-            <div className="panel"><div className="panel-body">Tipp: <b>{sanDe(new Chess(fen).move(parseUci(best))?.san ?? '')}</b> – der Pfeil zeigt den Zug der Engine.</div></div>
+            <div className="panel"><div className="panel-body">Tipp: <b>{sanDe(uciToSan(fen, best))}</b> – der Pfeil zeigt den Zug der Engine.</div></div>
           )}
           <div className="panel">
             <div className="panel-head"><b>Züge</b></div>

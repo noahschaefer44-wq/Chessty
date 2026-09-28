@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import { useProgress, gradeReview, removeReview, type ReviewCard } from '../lib/progress';
-import { tryMove, parseUci, sanDe } from '../lib/chess';
+import { tryMove, parseUci, sanDe, uciToSan } from '../lib/chess';
 import { sound } from '../lib/sound';
 
 /** Fehlerheft: Stellungen, die du falsch hattest, kommen per Spaced Repetition wieder. */
@@ -72,7 +72,7 @@ export default function Review() {
             {state === 'ok' && <div className="feedback good"><b>✓ Richtig!</b> Nächste Wiederholung in einigen Tagen.</div>}
             {state === 'bad' && (
               <div className="feedback bad">
-                <b>Noch nicht sicher.</b> Richtig war {sanDe(new Chess(fen).move(parseUci(card.solution[ply]))?.san ?? '')}. Kommt bald wieder.
+                <b>Noch nicht sicher.</b> Richtig war {sanDe(uciToSan(fen, card.solution[ply]))}. Kommt bald wieder.
                 {card.note && <p style={{ marginTop: 8 }}>{card.note}</p>}
               </div>
             )}

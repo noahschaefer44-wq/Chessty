@@ -8,7 +8,7 @@ import { LEVELS, CATEGORIES, type Explain as ExplainT, type MoveStep } from '../
 import { walkLesson, stripSan } from '../content/walk';
 import { completeLesson, addReview } from '../lib/progress';
 import { engine, formatEval } from '../lib/engine';
-import { tryMove, uci, sanDe, parseUci } from '../lib/chess';
+import { tryMove, uci, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
 
@@ -160,7 +160,7 @@ export default function LessonPlayer({ id }: { id: string }) {
       setFeedback({ good: false, text: { short: `${sanDe(m.san)} ist hier nicht der gesuchte Zug. Die Engine prüft, was der Gegner darauf hätte …` } });
       setExtraArrows(['!' + u]);
       const r = await engine.analyse(c.fen(), { depth: 12 });
-      const reply = r.best && r.best !== '(none)' ? new Chess(c.fen()).move(parseUci(r.best)) : null;
+      const reply = r.best && r.best !== '(none)' ? tryMove(new Chess(c.fen()), r.best) : null;
       setFeedback({
         good: false,
         text: {
@@ -283,7 +283,7 @@ export default function LessonPlayer({ id }: { id: string }) {
                 {lines[0] && (
                   <p className="mono">
                     Bewertung {formatEval(lines[0])} · bester Zug{' '}
-                    {sanDe(new Chess(fen).move(parseUci(lines[0].pv[0]))?.san ?? '')}
+                    {sanDe(uciToSan(fen, lines[0].pv[0]))}
                   </p>
                 )}
                 <button className="btn small" onClick={() => { setExplore(false); setFen(phase === 'solved' ? pos.end : pos.shown); setLast(pos.lastMove); }}>
@@ -341,7 +341,21 @@ export default function LessonPlayer({ id }: { id: string }) {
                 </button>
               </>
             )}
-            <button className="btn small" onClick={() => setExplore((e) => !e)}>
+            <button
+              className="btn small"
+              onClick={() => {
+                // Ausstehende Animationen/Rücksetzer stoppen, damit die Stellung stabil bleibt
+                clearTimers();
+                if (explore) {
+                  setFen(phase === 'solved' ? pos.end : pos.shown);
+                  setLast(phase === 'solved' ? pos.endLastMove : pos.lastMove);
+                } else if (phase === 'task') {
+                  setFen(pos.shown);
+                  setLast(pos.lastMove);
+                }
+                setExplore((e) => !e);
+              }}
+            >
               {explore ? 'Engine aus' : 'Warum nicht …? ausprobieren'}
             </button>
             <span className="spacer" />
