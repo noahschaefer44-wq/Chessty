@@ -6,7 +6,7 @@ Kostenlose, interaktive Schach-Lern-App (PWA, offline nutzbar) – vom Einsteige
 
 ## Inhalte
 - **Lernpfad** (Duolingo-Stil) mit XP, Serie, Tagesziel und Stufen
-- **35 Lektionen** in Grundlagen, Taktik, Strategie, Eröffnungen, Endspiele – jede Erklärung in drei Tiefen (Kurz / Warum? / Profi), mit Pfeilen, typischen Fehlern und „Warum nicht …?“-Engine-Modus
+- **36 Lektionen** in Grundlagen, Taktik, Strategie, Eröffnungen, Endspiele – jede Erklärung in drei Tiefen (Kurz / Warum? / Profi), mit Pfeilen, typischen Fehlern und „Warum nicht …?“-Engine-Modus
 - **Taktik-Training**: 30 Motive × 4 Stufen aus der Lichess-Puzzle-Datenbank, **max. 10 Puzzles pro Runde**, Puzzle-Rush
 - **Eröffnungen**: 9 Eröffnungslektionen mit Fallen, Varianten-Training und Explorer (3.800 benannte Varianten)
 - **Endspiel-Praxis** gegen perfekte Verteidigung (Lichess-Tablebase, offline Stockfish)
