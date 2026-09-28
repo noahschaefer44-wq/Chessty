@@ -1,0 +1,8 @@
+node_modules
+dist
+data-src/*.csv
+data-src/*.zip
+data-src/*.pgn
+data-src/*.tsv
+*.log
+.DS_Store
