@@ -139,4 +139,4 @@ for (const p of PRACTICE) {
 
 console.log(problems ? `\n${problems} Hinweise` : '\nAlles in Ordnung');
 sf.kill();
-process.exit(0);
+process.exit(problems ? 1 : 0);

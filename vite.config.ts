@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['icons/*.svg', 'engine/*', 'data/*.json'],
       manifest: {
         name: 'Chessty – Schach lernen',

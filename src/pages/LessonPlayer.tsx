@@ -6,11 +6,14 @@ import { EvalBar, Legend } from '../components/Widgets';
 import { lessonById, lessons } from '../content';
 import { LEVELS, CATEGORIES, type Explain as ExplainT, type MoveStep } from '../content/types';
 import { walkLesson, stripSan } from '../content/walk';
-import { completeLesson, addReview } from '../lib/progress';
+import { completeLesson, addReview, loseHeart, useProgress, heartsNow } from '../lib/progress';
+import { confetti } from '../lib/confetti';
+import NoHearts from '../components/NoHearts';
 import { engine, formatEval } from '../lib/engine';
 import { tryMove, uci, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
+import { useKeys } from '../lib/useKeys';
 
 type Phase = 'show' | 'task' | 'solved';
 
@@ -76,6 +79,14 @@ export default function LessonPlayer({ id }: { id: string }) {
   }, [idx, lesson]);
 
   const { lines, loading } = useEngine(fen, explore, 16);
+  const prog = useProgress();
+  useKeys({
+    ' ': () => (phase === 'show' || phase === 'solved') && !(phase === 'show' && step?.kind === 'move') && next(),
+    Enter: () => (phase === 'show' || phase === 'solved') && !(phase === 'show' && step?.kind === 'move') && next(),
+    ArrowLeft: () => idx > 0 && setIdx(idx - 1),
+  });
+
+  if (prog.heartsEnabled && heartsNow(prog) === 0 && !finished) return <NoHearts />;
 
   if (!lesson || !step || !pos) {
     return (
@@ -141,6 +152,7 @@ export default function LessonPlayer({ id }: { id: string }) {
     sound.bad();
     blink('flash-bad');
     setErrors((e) => e + 1);
+    loseHeart();
     setFen(c.fen());
     setLast([m.from, m.to]);
     const known = s.mistakes?.find((x) => stripSan(x.san) === stripSan(m.san));
@@ -187,6 +199,7 @@ export default function LessonPlayer({ id }: { id: string }) {
     const stars = errors === 0 ? 3 : errors <= 2 ? 2 : 1;
     completeLesson(lesson!.id, stars, 10 + stars * 5);
     setFinished(true);
+    confetti();
     sound.good();
   }
 
@@ -286,9 +299,12 @@ export default function LessonPlayer({ id }: { id: string }) {
                     {sanDe(uciToSan(fen, lines[0].pv[0]))}
                   </p>
                 )}
-                <button className="btn small" onClick={() => { setExplore(false); setFen(phase === 'solved' ? pos.end : pos.shown); setLast(pos.lastMove); }}>
-                  Zurück zur Lektion
-                </button>
+                <div className="row">
+                  <button className="btn small" onClick={() => { setExplore(false); setFen(phase === 'solved' ? pos.end : pos.shown); setLast(pos.lastMove); }}>
+                    Zurück zur Lektion
+                  </button>
+                  <a className="btn small" href={'#/spielen/' + encodeURIComponent(fen)}>Gegen Bot ausspielen</a>
+                </div>
               </div>
             </div>
           ) : (

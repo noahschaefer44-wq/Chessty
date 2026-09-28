@@ -1,4 +1,5 @@
 import { Chess } from 'chess.js';
+import { openingDe } from './openingsDe';
 
 export interface OpeningRow {
   eco: string;
@@ -11,7 +12,7 @@ export function loadOpenings(): Promise<OpeningRow[]> {
   cache ??= fetch(new URL('data/openings.json', document.baseURI))
     .then((r) => r.json())
     .then((rows: [string, string, string][]) =>
-      rows.map(([eco, name, pgn]) => ({ eco, name, moves: pgn.replace(/\d+\.\s*/g, '').split(/\s+/).filter(Boolean) })),
+      rows.map(([eco, name, pgn]) => ({ eco, name: openingDe(name), moves: pgn.replace(/\d+\.\s*/g, '').split(/\s+/).filter(Boolean) })),
     );
   return cache;
 }

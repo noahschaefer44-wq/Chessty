@@ -1,8 +1,11 @@
 import { lessons, masters } from '../content';
 import { CATEGORIES } from '../content/types';
 import { THEMES } from '../content/themes';
-import { useProgress, update, resetProgress, levelFromXp } from '../lib/progress';
+import { useProgress, update, resetProgress, levelFromXp, exportProgress, importProgress } from '../lib/progress';
+import MiniBoard from '../components/MiniBoard';
 import { Bar } from '../components/Widgets';
+import { BADGES } from '../lib/game';
+import { PATTERN_INFO, type Pattern } from '../lib/explainMove';
 
 export default function Profile() {
   const p = useProgress();
@@ -40,6 +43,40 @@ export default function Profile() {
         <div className="kpi"><span>Puzzle-Wertung</span><b>{p.puzzleRating}</b></div>
         <div className="kpi"><span>Puzzles gelöst</span><b>{p.puzzlesSolved}</b></div>
       </div>
+
+      <div className="row" style={{ marginTop: 14, fontFamily: 'var(--mono)', fontSize: 13 }}>
+        <span>Beste Serie: {p.bestStreak}</span>
+        <span>· Serienschutz: {p.streakFreezes}/2</span>
+        {p.placementDone && <span>· Einstufung: Stufe {p.placementLevel}</span>}
+      </div>
+
+      <h2 style={{ marginTop: 36 }}>Abzeichen ({Object.keys(p.badges).length}/{BADGES.length})</h2>
+      <div className="badge-grid">
+        {BADGES.map((b) => (
+          <div key={b.id} className={'badge' + (p.badges[b.id] ? ' got' : '')} title={b.text}>
+            <span className="ico-box">{b.icon}</span>
+            <b>{b.name}</b>
+            <small>{p.badges[b.id] ? new Date(p.badges[b.id]).toLocaleDateString('de-DE') : b.text}</small>
+          </div>
+        ))}
+      </div>
+
+      {Object.keys(p.patterns).length > 0 && (
+        <>
+          <h2 style={{ marginTop: 36 }}>Deine Fehlermuster</h2>
+          <p className="muted">Aus {p.totals.analyses} analysierten eigenen Partien. Hier lohnt sich Training am meisten:</p>
+          <div className="list">
+            {(Object.entries(p.patterns) as [Pattern, number][]).sort((a, b) => b[1] - a[1]).map(([k, n]) => (
+              <a key={k} href={PATTERN_INFO[k].link}>
+                <b style={{ width: 240 }}>{PATTERN_INFO[k].name}</b>
+                <span className="mono" style={{ width: 50 }}>×{n}</span>
+                <span style={{ flex: 1, fontSize: 14 }}>{PATTERN_INFO[k].tip}</span>
+                <span style={{ fontSize: 13 }}>{PATTERN_INFO[k].linkText} →</span>
+              </a>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 style={{ marginTop: 36 }}>Lernpfade</h2>
       <div className="stack">
@@ -105,6 +142,51 @@ export default function Profile() {
             <button className={!p.sound ? 'on' : ''} onClick={() => update((x) => ({ ...x, sound: false }))}>Aus</button>
           </div>
         </div>
+        <div className="row">
+          <span style={{ width: 160 }}>Herzen</span>
+          <div className="seg">
+            <button className={p.heartsEnabled ? 'on' : ''} onClick={() => update((x) => ({ ...x, heartsEnabled: true }))}>An</button>
+            <button className={!p.heartsEnabled ? 'on' : ''} onClick={() => update((x) => ({ ...x, heartsEnabled: false }))}>Aus</button>
+          </div>
+          <span className="muted" style={{ fontSize: 13 }}>5 Leben pro Tag, wie bei Duolingo</span>
+        </div>
+        <div className="row">
+          <span style={{ width: 160 }}>Einstufung</span>
+          <a className="btn small" href="#/einstufung">{p.placementDone ? 'Test wiederholen' : 'Test machen'}</a>
+        </div>
+        <div className="row">
+          <span style={{ width: 160 }}>Brett</span>
+          <div className="seg">
+            {([['grau', 'Grau'], ['kontrast', 'Kontrast'], ['papier', 'Papier'], ['schiefer', 'Schiefer']] as const).map(([k, l]) => (
+              <button key={k} className={p.boardTheme === k ? 'on' : ''} onClick={() => update((x) => ({ ...x, boardTheme: k }))}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div className={`theme-${p.boardTheme}`} style={{ width: 160 }}>
+          <MiniBoard fen="r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3" size={160} />
+        </div>
+        <div className="row">
+          <span style={{ width: 160 }}>Zug-Animation</span>
+          <div className="seg">
+            {([[0, 'Aus'], [120, 'Schnell'], [220, 'Normal'], [400, 'Langsam']] as const).map(([k, l]) => (
+              <button key={k} className={p.animSpeed === k ? 'on' : ''} onClick={() => update((x) => ({ ...x, animSpeed: k }))}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="row">
+          <span style={{ width: 160 }}>Sicherung</span>
+          <button className="btn small" onClick={exportProgress}>Fortschritt exportieren</button>
+          <label className="btn small" style={{ cursor: 'pointer' }}>
+            Importieren
+            <input type="file" accept="application/json" hidden onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (f) alert((await importProgress(f)) ? 'Fortschritt geladen.' : 'Diese Datei ist keine Chessty-Sicherung.');
+            }} />
+          </label>
+        </div>
+        <p className="muted" style={{ fontSize: 13 }}>
+          Tastatur: Leertaste/Enter = Weiter, Pfeiltasten = Züge vor/zurück.
+        </p>
         <button className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => confirm('Wirklich den gesamten Fortschritt löschen?') && resetProgress()}>
           Fortschritt zurücksetzen
         </button>

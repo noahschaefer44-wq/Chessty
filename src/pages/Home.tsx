@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { CATEGORIES } from '../content/types';
 import { lessons, masters } from '../content';
-import { useProgress, levelFromXp } from '../lib/progress';
+import { useProgress, levelFromXp, today } from '../lib/progress';
+import { questsFor, BADGES } from '../lib/game';
 import { Bar, Ring } from '../components/Widgets';
 
 const TICKER = [
@@ -79,6 +80,52 @@ export default function Home() {
             </a>
           )}
         </div>
+      </section>
+
+      <section className="grid" style={{ marginBottom: 12 }}>
+        <div className="card flat">
+          <div className="kicker">Tagesquests · jeden Tag neu</div>
+          <div className="stack">
+            {questsFor(today()).map((q) => {
+              const v = Math.min(q.target, q.value(p.day));
+              const done = p.questsClaimed.includes(q.id);
+              return (
+                <div key={q.id}>
+                  <div className="row" style={{ justifyContent: 'space-between', fontSize: 14 }}>
+                    <span>{done ? '✓ ' : ''}{q.text}</span>
+                    <span className="mono">{done ? `+${q.xp} XP` : `${v}/${q.target}`}</span>
+                  </div>
+                  <Bar value={v} max={q.target} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {!p.placementDone ? (
+          <a className="card inverse" href="#/einstufung">
+            <div className="kicker">2 Minuten · 10 Aufgaben</div>
+            <h3>Einstufungstest</h3>
+            <p className="muted">Du kannst schon Schach? Finde heraus, wo du stehst – passende Lektionen werden freigeschaltet.</p>
+          </a>
+        ) : (
+          <a className="card" href="#/profil">
+            <div className="kicker">Abzeichen</div>
+            <h3>{Object.keys(p.badges).length} / {BADGES.length}</h3>
+            <p className="muted" style={{ letterSpacing: 4 }}>
+              {BADGES.filter((b) => p.badges[b.id]).slice(-8).map((b) => b.icon).join(' ') || 'Noch keins – leg los!'}
+            </p>
+          </a>
+        )}
+        <a className="card" href="#/training">
+          <div className="kicker">Kurz & knackig</div>
+          <h3>Trainer</h3>
+          <p className="muted">Koordinaten, Feldfarben, Blindschach, Rechnen, „Was droht?“ und mehr.</p>
+        </a>
+        <a className="card" href="#/begriffe">
+          <div className="kicker">Nachschlagen</div>
+          <h3>Fachbegriffe-Heft</h3>
+          <p className="muted">Über 100 Begriffe von Abzug bis Zugzwang – mit Diagramm.</p>
+        </a>
       </section>
 
       <div className="ticker" aria-hidden>

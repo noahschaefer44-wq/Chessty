@@ -4,7 +4,14 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './styles/global.css';
 
-registerSW({ immediate: true });
+// Neue Version: Hinweis anzeigen statt still zu aktualisieren
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    window.dispatchEvent(new CustomEvent('chessty-update'));
+  },
+});
+(window as unknown as { chesstyUpdate: () => void }).chesstyUpdate = () => void updateSW(true);
 
 // Gespeichertes Farbschema anwenden
 try {

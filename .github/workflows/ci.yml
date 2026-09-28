@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc -b
+      - name: Build
+        run: npx vite build
+      - name: Fachbegriffe prüfen
+        run: npx tsx scripts/validate-glossary.ts
+      - name: Lektionen mit Stockfish prüfen
+        run: npx tsx scripts/validate-content.ts

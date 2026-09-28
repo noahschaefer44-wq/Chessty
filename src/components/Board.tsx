@@ -20,6 +20,29 @@ export interface BoardProps {
   className?: string;
 }
 
+// Eigene Pfeile (Rechtsklick/Ziehen) werden pro Stellung gespeichert
+const ARROW_KEY = 'chessty.arrows';
+function loadArrows(fen: string): DrawShape[] {
+  try {
+    return JSON.parse(localStorage.getItem(ARROW_KEY) ?? '{}')[fen.split(' ')[0]] ?? [];
+  } catch {
+    return [];
+  }
+}
+function saveArrows(fen: string, shapes: DrawShape[]) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ARROW_KEY) ?? '{}');
+    const k = fen.split(' ')[0];
+    if (shapes.length) all[k] = shapes;
+    else delete all[k];
+    const keys = Object.keys(all);
+    if (keys.length > 400) delete all[keys[0]];
+    localStorage.setItem(ARROW_KEY, JSON.stringify(all));
+  } catch {
+    /* Speicher nicht verfügbar */
+  }
+}
+
 // Monochrome Pinsel: Schwarz = empfohlen, Grau = Alternative, Hellgrau = Fehler
 const brushes = {
   green: { key: 'g', color: '#000000', opacity: 0.85, lineWidth: 10 },
@@ -65,19 +88,20 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
       if (cg && cg.getFen() !== fenRef.current.split(' ')[0]) cg.set({ fen: fenRef.current, lastMove: undefined });
     }, 60);
   const [promo, setPromo] = useState<{ from: string; to: string; color: Color } | null>(null);
-  const { showCoords } = useProgress();
+  const { showCoords, animSpeed, boardTheme } = useProgress();
+  const [announce, setAnnounce] = useState('');
 
   useEffect(() => {
     if (!el.current) return;
     api.current = Chessground(el.current, {
       coordinates: showCoords,
-      animation: { enabled: true, duration: 220 },
+      animation: { enabled: animSpeed > 0, duration: animSpeed },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: true, brushes, defaultSnapToValidMove: true },
+      drawable: { enabled: true, brushes, defaultSnapToValidMove: true, onChange: (sh) => saveArrows(fenRef.current, sh) },
       premovable: { enabled: false },
     });
     return () => api.current?.destroy();
-  }, [showCoords]);
+  }, [showCoords, animSpeed]);
 
   useEffect(() => {
     const cg = api.current;
@@ -90,6 +114,7 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
     }
     const turn = chess ? turnColor(chess) : 'white';
     const canMove = !!chess && !!movable && (movable === 'both' || movable === turn);
+    cg.setShapes(loadArrows(fen));
     cg.set({
       fen,
       orientation,
@@ -113,11 +138,12 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
         },
       },
     });
-  }, [fen, orientation, movable, lastMove?.[0], lastMove?.[1], showCoords]);
+    if (lastMove) setAnnounce(`Zug von ${lastMove[0]} nach ${lastMove[1]}${chess?.inCheck() ? ', Schach' : ''}.`);
+  }, [fen, orientation, movable, lastMove?.[0], lastMove?.[1], showCoords, animSpeed]);
 
   useEffect(() => {
     api.current?.setAutoShapes([...(shapes ?? []), ...parseArrows(arrows)]);
-  }, [shapes, arrows, fen, showCoords]);
+  }, [shapes, arrows, fen, showCoords, animSpeed]);
 
   const pick = (role: string) => {
     if (!promo) return;
@@ -127,8 +153,9 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
   };
 
   return (
-    <div className={'board-wrap ' + (className ?? '')}>
+    <div className={`board-wrap theme-${boardTheme} ` + (className ?? '')}>
       <div ref={el} className="cg-board-el" />
+      <div className="sr-only" aria-live="polite">{announce}</div>
       {promo && (
         <div className="promo" role="dialog" aria-label="Umwandlung wählen">
           {['q', 'r', 'b', 'n'].map((r) => (

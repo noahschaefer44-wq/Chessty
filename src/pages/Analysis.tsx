@@ -2,10 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import { EvalBar } from '../components/Widgets';
-import { engine, formatEval, winChance, type EngineLine } from '../lib/engine';
-import { sanDe, parseUci, material, pieceName, uci } from '../lib/chess';
-import { addReview } from '../lib/progress';
+import { engine, winChance, type EngineLine } from '../lib/engine';
+import { sanDe, uci } from '../lib/chess';
+import { addReview, addPatterns } from '../lib/progress';
 import { Rich } from '../components/Explain';
+import { useKeys } from '../lib/useKeys';
+import { judgeMove, Q_LABEL, PATTERN_INFO, type Quality, type Pattern } from '../lib/explainMove';
+import GameImport from '../components/GameImport';
+import { loadOpenings } from '../lib/openings';
+import { lessons } from '../content';
 
 interface Ply {
   san: string;
@@ -17,37 +22,28 @@ interface Ply {
   evalAfter?: EngineLine;
   best?: string;
   bestSan?: string;
-  quality?: 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder';
+  quality?: Quality;
+  pattern?: Pattern;
   explain?: string;
 }
 
-const Q_LABEL = { best: 'Bester Zug', good: 'Gut', inaccuracy: 'Ungenauigkeit ?!', mistake: 'Fehler ?', blunder: 'Patzer ??' };
-
 const SAMPLE = `1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4 4. Nxe5 Qg5 5. Nxf7 Qxg2 6. Rf1 Qxe4+ 7. Be2 Nf3#`;
 
-/** Einfache Sprache: Was ist bei diesem Zug schiefgelaufen? */
-function explain(p: Ply, afterLine: EngineLine | undefined): string {
-  const me = p.color === 'w' ? 1 : -1;
-  const bestMate = p.evalBefore?.mate;
-  if (bestMate !== undefined && bestMate * me > 0 && !(p.evalAfter?.mate !== undefined && p.evalAfter.mate * me > 0))
-    return `Du hattest ein **Matt in ${Math.abs(bestMate)}** – beginnend mit **${sanDe(p.bestSan ?? '')}**. Suche immer zuerst nach Schachgeboten!`;
-  if (p.evalAfter?.mate !== undefined && p.evalAfter.mate * me < 0)
-    return `Nach ${sanDe(p.san)} kann der Gegner **in ${Math.abs(p.evalAfter.mate)} Zügen mattsetzen**. Prüfe vor jedem Zug: Welche Schachs und Drohungen hat der Gegner?`;
-  // Materialverlust nach der besten gegnerischen Antwort?
-  const reply = afterLine?.pv[0];
-  if (reply) {
-    const c = new Chess(p.fenAfter);
-    const before = material(new Chess(p.fenBefore));
-    const r = c.move(parseUci(reply));
-    if (r?.captured) {
-      const after = material(c);
-      const lost = p.color === 'w' ? before.white - after.white : before.black - after.black;
-      if (lost >= 2)
-        return `Nach ${sanDe(p.san)} schlägt der Gegner mit **${sanDe(r.san)}** deinen ${pieceName[r.captured]} auf ${r.to}. Stand die Figur ungedeckt? Besser war **${sanDe(p.bestSan ?? '')}**.`;
+/** Eröffnungs-Check: benannte Eröffnung und Abweichung von trainierten Varianten. */
+async function openingCheck(sans: string[], me: 'w' | 'b' | null) {
+  const rows = await loadOpenings();
+  let best: { name: string; eco: string; len: number } | null = null;
+  for (const r of rows) if (r.moves.length <= sans.length && r.moves.every((m, i) => m === sans[i]) && (!best || r.moves.length > best.len)) best = { name: r.name, eco: r.eco, len: r.moves.length };
+  // Abweichung von einer trainierten Variante finden (längste gemeinsame Anfangsfolge)
+  let dev: { lesson: string; drill: string; ply: number; expected: string; played: string; mine: boolean } | null = null;
+  for (const l of lessons)
+    for (const d of l.drill ?? []) {
+      let k = 0;
+      while (k < d.moves.length && k < sans.length && d.moves[k] === sans[k]) k++;
+      if (k >= 2 && k < d.moves.length && k < sans.length && (!dev || k > dev.ply))
+        dev = { lesson: l.title, drill: d.name, ply: k, expected: d.moves[k], played: sans[k], mine: me !== null && (k % 2 === 0 ? 'w' : 'b') === me };
     }
-    if (r) return `Der Gegner antwortet stark mit **${sanDe(r.san)}**. Besser war **${sanDe(p.bestSan ?? '')}** (Bewertung ${formatEval(p.evalBefore)} statt ${formatEval(p.evalAfter)}).`;
-  }
-  return `Besser war **${sanDe(p.bestSan ?? '')}**.`;
+  return { best, dev };
 }
 
 export default function Analysis() {
@@ -58,23 +54,31 @@ export default function Analysis() {
       return '';
     }
   });
+  const [me, setMe] = useState<'w' | 'b' | null>(null);
   const [plies, setPlies] = useState<Ply[]>([]);
   const [cur, setCur] = useState(0);
   const [progress, setProgress] = useState(-1);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [opening, setOpening] = useState<Awaited<ReturnType<typeof openingCheck>> | null>(null);
   const cancel = useRef(false);
 
   useEffect(() => () => { cancel.current = true; engine.stop(); }, []);
+  useKeys({
+    ArrowRight: () => setCur((c) => Math.min(plies.length, c + 1)),
+    ArrowLeft: () => setCur((c) => Math.max(0, c - 1)),
+    Home: () => setCur(0),
+    End: () => setCur(plies.length),
+  });
 
-  async function run() {
+  async function run(text = pgn, color = me) {
     setError('');
     setSaved(false);
     const c = new Chess();
     try {
-      c.loadPgn(pgn.trim());
+      c.loadPgn(text.trim());
     } catch {
-      setError('Die PGN konnte nicht gelesen werden. Füge die Züge im Format „1. e4 e5 2. Sf3 …“ ein (englische Figurenbuchstaben: N, B, R, Q, K).');
+      setError('Die PGN konnte nicht gelesen werden. Füge die Züge im Format „1. e4 e5 2. Nf3 …“ ein (englische Figurenbuchstaben: N, B, R, Q, K).');
       return;
     }
     const hist = c.history({ verbose: true });
@@ -82,6 +86,7 @@ export default function Analysis() {
     const list: Ply[] = hist.map((m) => ({ san: m.san, uci: uci(m), fenBefore: m.before, fenAfter: m.after, color: m.color }));
     setPlies(list);
     setCur(0);
+    setOpening(await openingCheck(list.map((p) => p.san), color));
     cancel.current = false;
     const evals: (EngineLine | undefined)[] = [];
     const bests: string[] = [];
@@ -91,7 +96,6 @@ export default function Analysis() {
       setProgress(i / fens.length);
       const g = new Chess(fens[i]);
       if (g.isGameOver()) {
-        // Matt: ±100 als Bewertung, Remis: 0
         evals[i] = { depth: 0, multipv: 1, pv: [], cp: g.isCheckmate() ? (g.turn() === 'w' ? -100 : 100) : 0 };
         continue;
       }
@@ -100,20 +104,13 @@ export default function Analysis() {
       bests[i] = r.best;
     }
     const out = list.map((p, i) => {
-      const before = evals[i];
-      const after = evals[i + 1];
-      const me = p.color === 'w';
-      const wcB = me ? winChance(before) : 1 - winChance(before);
-      const wcA = me ? winChance(after) : 1 - winChance(after);
-      const drop = wcB - wcA;
-      const q: Ply['quality'] = bests[i] === p.uci ? 'best' : drop > 0.3 ? 'blunder' : drop > 0.18 ? 'mistake' : drop > 0.09 ? 'inaccuracy' : 'good';
-      const bestSan = bests[i] ? new Chess(p.fenBefore).move(parseUci(bests[i]))?.san : undefined;
-      const np: Ply = { ...p, evalBefore: before, evalAfter: after, best: bests[i], bestSan, quality: q };
-      if (q === 'mistake' || q === 'blunder' || q === 'inaccuracy') np.explain = explain(np, after);
-      return np;
+      const j = judgeMove(p.fenBefore, p.uci, evals[i], evals[i + 1], bests[i]);
+      return { ...p, evalBefore: evals[i], evalAfter: evals[i + 1], best: bests[i], bestSan: j.bestSan, quality: j.quality, pattern: j.pattern, explain: j.text };
     });
     setPlies(out);
     setProgress(-1);
+    // Fehlermuster nur für die eigenen Züge sammeln
+    addPatterns(color ? out.filter((p) => p.color === color && (p.quality === 'mistake' || p.quality === 'blunder') && p.pattern).map((p) => p.pattern!) : []);
   }
 
   const stats = useMemo(() => {
@@ -122,17 +119,23 @@ export default function Analysis() {
       if (!p.quality) continue;
       const side = s[p.color];
       if (p.quality in side) (side as Record<string, number>)[p.quality]++;
-      const me = p.color === 'w';
-      const drop = Math.max(0, (me ? winChance(p.evalBefore) : 1 - winChance(p.evalBefore)) - (me ? winChance(p.evalAfter) : 1 - winChance(p.evalAfter)));
+      const mine = p.color === 'w';
+      const drop = Math.max(0, (mine ? winChance(p.evalBefore) : 1 - winChance(p.evalBefore)) - (mine ? winChance(p.evalAfter) : 1 - winChance(p.evalAfter)));
       side.acc += Math.max(0, 100 - drop * 250);
       side.n++;
     }
     return s;
   }, [plies]);
 
+  const myPatterns = useMemo(() => {
+    const m: Partial<Record<Pattern, number>> = {};
+    for (const p of plies) if ((p.quality === 'mistake' || p.quality === 'blunder') && p.pattern && (!me || p.color === me)) m[p.pattern] = (m[p.pattern] ?? 0) + 1;
+    return Object.entries(m) as [Pattern, number][];
+  }, [plies, me]);
+
   function saveMistakes() {
     for (const p of plies) {
-      if ((p.quality === 'mistake' || p.quality === 'blunder') && p.best) {
+      if ((p.quality === 'mistake' || p.quality === 'blunder') && p.best && (!me || p.color === me)) {
         addReview({ id: 'ana:' + p.fenBefore, fen: p.fenBefore, solution: [p.best], title: `Eigene Partie: statt ${sanDe(p.san)}`, note: p.explain?.replace(/\*\*/g, ''), source: 'Analyse' });
       }
     }
@@ -142,9 +145,7 @@ export default function Analysis() {
   const view = cur === 0 ? null : plies[cur - 1];
   const fen = view ? view.fenAfter : plies[0]?.fenBefore ?? new Chess().fen();
   const next = plies[cur];
-  const arrows = next?.quality && next.quality !== 'best' && next.quality !== 'good' && next.best
-    ? ['!' + next.uci.slice(0, 4), next.best.slice(0, 4)]
-    : [];
+  const arrows = next?.quality && next.quality !== 'best' && next.quality !== 'good' && next.best ? ['!' + next.uci.slice(0, 4), next.best.slice(0, 4)] : [];
 
   if (!plies.length || progress >= 0) {
     return (
@@ -152,10 +153,24 @@ export default function Analysis() {
         <div className="page-head">
           <div className="kicker">Stockfish 19 · läuft offline in deinem Browser</div>
           <h1>Partieanalyse</h1>
-          <p className="muted">Füge eine Partie im PGN-Format ein (z. B. von Lichess oder Chess.com exportiert). Jeder Fehler wird in einfacher Sprache erklärt – mit dem besseren Zug als Pfeil.</p>
+          <p className="muted">Lade deine Partien direkt von Lichess oder Chess.com – oder füge eine PGN ein. Jeder Fehler wird in einfacher Sprache erklärt, deine typischen Fehlermuster werden gesammelt.</p>
         </div>
-        <div className="stack" style={{ maxWidth: 760 }}>
-          <textarea value={pgn} onChange={(e) => setPgn(e.target.value)} placeholder={SAMPLE} />
+        <div className="stack" style={{ maxWidth: 820 }}>
+          <GameImport onPick={(g) => { setPgn(g.pgn); setMe(g.userColor); void run(g.pgn, g.userColor); }} />
+          <div className="panel">
+            <div className="panel-head"><b>…oder PGN einfügen</b></div>
+            <div className="panel-body stack">
+              <textarea value={pgn} onChange={(e) => setPgn(e.target.value)} placeholder={SAMPLE} />
+              <div className="row">
+                <span>Ich hatte:</span>
+                <div className="seg">
+                  <button className={me === 'w' ? 'on' : ''} onClick={() => setMe('w')}>Weiß</button>
+                  <button className={me === 'b' ? 'on' : ''} onClick={() => setMe('b')}>Schwarz</button>
+                  <button className={me === null ? 'on' : ''} onClick={() => setMe(null)}>Egal</button>
+                </div>
+              </div>
+            </div>
+          </div>
           {error && <div className="feedback bad">{error}</div>}
           {progress >= 0 ? (
             <div>
@@ -164,7 +179,7 @@ export default function Analysis() {
             </div>
           ) : (
             <div className="row">
-              <button className="btn primary" onClick={run} disabled={!pgn.trim()}>Analysieren <span className="arrow">→</span></button>
+              <button className="btn primary" onClick={() => run()} disabled={!pgn.trim()}>Analysieren <span className="arrow">→</span></button>
               <button className="btn" onClick={() => setPgn(SAMPLE)}>Beispiel laden</button>
             </div>
           )}
@@ -178,19 +193,29 @@ export default function Analysis() {
       <button className="back" style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0 }} onClick={() => setPlies([])}>← Neue Partie</button>
       <div className="trainer">
         <div className="board-col">
-          <Board fen={fen} lastMove={view ? [view.uci.slice(0, 2), view.uci.slice(2, 4)] : undefined} arrows={arrows} />
+          <Board fen={fen} orientation={me === 'b' ? 'black' : 'white'} lastMove={view ? [view.uci.slice(0, 2), view.uci.slice(2, 4)] : undefined} arrows={arrows} />
           <EvalBar line={view ? view.evalAfter : plies[0]?.evalBefore} />
         </div>
         <aside className="side">
           <div className="kpis">
             {(['w', 'b'] as const).map((c) => (
               <div className="kpi" key={c}>
-                <span>{c === 'w' ? 'Weiß' : 'Schwarz'} · Genauigkeit</span>
+                <span>{c === 'w' ? 'Weiß' : 'Schwarz'}{me === c ? ' (du)' : ''} · Genauigkeit</span>
                 <b>{Math.round(stats[c].acc / Math.max(1, stats[c].n))}%</b>
                 <span className="mono">{stats[c].blunder}?? · {stats[c].mistake}? · {stats[c].inaccuracy}?!</span>
               </div>
             ))}
           </div>
+          {opening?.best && (
+            <div className="panel"><div className="panel-body">
+              <b>Eröffnung:</b> {opening.best.eco} {opening.best.name} <span className="muted">(Theorie bis Zug {Math.ceil(opening.best.len / 2)})</span>
+              {opening.dev && (
+                <p style={{ marginTop: 8, marginBottom: 0 }}>
+                  {opening.dev.mine ? '⚠ ' : ''}In Zug {Math.floor(opening.dev.ply / 2) + 1} wurde von deiner Trainingsvariante „{opening.dev.drill}“ ({opening.dev.lesson}) abgewichen: gespielt {sanDe(opening.dev.played)}, Theorie {sanDe(opening.dev.expected)}.
+                </p>
+              )}
+            </div></div>
+          )}
           {next?.explain && (
             <div className="feedback bad">
               <b>{Math.floor(cur / 2) + 1}{next.color === 'w' ? '.' : '…'} {sanDe(next.san)} – {Q_LABEL[next.quality!]}</b>
@@ -202,12 +227,11 @@ export default function Analysis() {
           )}
           <div className="panel">
             <div className="panel-head"><b>Züge</b><span className="spacer" /><span className="mono" style={{ fontSize: 12 }}>unterstrichen = Fehler</span></div>
-            <div className="movelist" style={{ maxHeight: 300 }}>
+            <div className="movelist" style={{ maxHeight: 260 }}>
               {plies.map((p, i) => (
                 <span key={i} style={{ display: 'contents' }}>
                   {i % 2 === 0 && <span className="n">{i / 2 + 1}.</span>}
-                  <button className={(cur === i + 1 ? 'cur ' : '') + (p.quality === 'blunder' ? 'q-blunder' : p.quality === 'mistake' || p.quality === 'inaccuracy' ? 'q-mistake' : '')}
-                    onClick={() => setCur(i + 1)}>
+                  <button className={(cur === i + 1 ? 'cur ' : '') + (p.quality === 'blunder' ? 'q-blunder' : p.quality === 'mistake' || p.quality === 'inaccuracy' ? 'q-mistake' : '')} onClick={() => setCur(i + 1)}>
                     {sanDe(p.san)}{p.quality === 'blunder' ? '??' : p.quality === 'mistake' ? '?' : p.quality === 'inaccuracy' ? '?!' : ''}
                   </button>
                 </span>
@@ -219,12 +243,28 @@ export default function Analysis() {
             <button className="btn small" onClick={() => setCur(Math.max(0, cur - 1))}>←</button>
             <button className="btn small" onClick={() => setCur(Math.min(plies.length, cur + 1))}>→</button>
             <button className="btn small" onClick={() => {
-              const i = plies.findIndex((p, k) => k >= cur && (p.quality === 'blunder' || p.quality === 'mistake'));
+              const i = plies.findIndex((p, k) => k >= cur && (p.quality === 'blunder' || p.quality === 'mistake') && (!me || p.color === me));
               if (i >= 0) setCur(i);
             }}>Nächster Fehler</button>
           </div>
-          <button className="btn" onClick={saveMistakes} disabled={saved}>{saved ? '✓ Im Fehlerheft' : 'Fehler ins Fehlerheft'}</button>
-          <p className="muted" style={{ fontSize: 13 }}>Pfeile: grau = gespielter Fehler, schwarz = besserer Zug. Die Stellung zeigt den Moment VOR dem markierten Zug.</p>
+          {myPatterns.length > 0 && (
+            <div className="panel">
+              <div className="panel-head"><b>{me ? 'Deine' : 'Die'} Fehlermuster in dieser Partie</b></div>
+              <div className="list" style={{ border: 0 }}>
+                {myPatterns.map(([k, n]) => (
+                  <a key={k} href={PATTERN_INFO[k].link}>
+                    <b style={{ flex: 1 }}>{PATTERN_INFO[k].name} ×{n}</b>
+                    <span style={{ fontSize: 13 }}>{PATTERN_INFO[k].linkText} →</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="row">
+            <button className="btn" onClick={saveMistakes} disabled={saved}>{saved ? '✓ Als Puzzles im Fehlerheft' : 'Fehler als Puzzles speichern'}</button>
+            <a className="btn" href={'#/spielen/' + encodeURIComponent(fen)}>Ab hier gegen Bot</a>
+          </div>
+          <p className="muted" style={{ fontSize: 13 }}>Pfeile: grau = gespielter Fehler, schwarz = besserer Zug. Tastatur: ← →</p>
         </aside>
       </div>
     </>

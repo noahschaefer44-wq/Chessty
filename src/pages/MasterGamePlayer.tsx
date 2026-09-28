@@ -4,11 +4,13 @@ import Board from '../components/Board';
 import Explain from '../components/Explain';
 import { EvalBar } from '../components/Widgets';
 import { masterById } from '../content';
-import { addXp, update } from '../lib/progress';
+import { addXp, update, bump } from '../lib/progress';
+import { confetti } from '../lib/confetti';
 import { tryMove, sanDe } from '../lib/chess';
 import { stripSan } from '../content/walk';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
+import { useKeys } from '../lib/useKeys';
 
 export default function MasterGamePlayer({ id }: { id: string }) {
   const g = masterById(id);
@@ -52,6 +54,10 @@ export default function MasterGamePlayer({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ply, started, auto]);
 
+  useKeys({
+    ArrowRight: () => started && guessing === null && (reveal === ply ? (setReveal(null), setWrong([]), setPly(ply + 1)) : step(1)),
+    ArrowLeft: () => started && guessing === null && step(-1),
+  });
   const endReached = !!g && started && (reveal === ply ? ply + 1 : ply) >= total;
   useEffect(() => {
     if (endReached && !finished) finish();
@@ -76,6 +82,8 @@ export default function MasterGamePlayer({ id }: { id: string }) {
     const f = Object.values(found).filter(Boolean).length;
     update((p) => ({ ...p, masters: { ...p.masters, [g!.id]: { done: true, found: f, total: g!.moments.length } } }));
     addXp(10 + f * 5);
+    bump('masters');
+    confetti();
   }
 
   function onMove(u: string) {
@@ -191,6 +199,7 @@ export default function MasterGamePlayer({ id }: { id: string }) {
               <button className="btn small" onClick={() => (reveal === ply ? (setReveal(null), setWrong([]), setPly(ply + 1)) : step(1))} disabled={done}>→</button>
               <button className="btn small" onClick={() => setAuto((a) => !a)} disabled={done}>{auto ? 'Pause' : 'Abspielen'}</button>
               <button className="btn small" onClick={() => setEngineOn((e) => !e)}>{engineOn ? 'Engine aus' : 'Engine'}</button>
+              <a className="btn small" href={'#/spielen/' + encodeURIComponent(pos.fen)}>Ab hier gegen Bot</a>
             </div>
           )}
 

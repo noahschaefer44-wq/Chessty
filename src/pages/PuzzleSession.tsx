@@ -5,7 +5,9 @@ import Explain from '../components/Explain';
 import { EvalBar } from '../components/Widgets';
 import { themeById, themeName } from '../content/themes';
 import { pickRound, BAND_NAMES, MAX_PER_ROUND, type Puzzle } from '../lib/puzzles';
-import { addReview, addXp, recordPuzzle, useProgress, getProgress } from '../lib/progress';
+import { addReview, addXp, recordPuzzle, useProgress, getProgress, loseHeart, bumpTotal, heartsNow } from '../lib/progress';
+import { confetti } from '../lib/confetti';
+import NoHearts from '../components/NoHearts';
 import { parseUci, tryMove, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
@@ -81,6 +83,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
   function finishPuzzle(ok: boolean) {
     recordPuzzle(pz.id, pz.rating, pz.themes, ok);
     if (ok) addXp(rush ? 3 : 5);
+    else loseHeart();
     setResults((r) => [...r, ok]);
     if (!ok)
       addReview({
@@ -173,6 +176,16 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+  // Rundenende: Rush-Rekord speichern, bei starker Runde Konfetti
+  useEffect(() => {
+    if (state !== 'done') return;
+    const solved = results.filter(Boolean).length;
+    if (rush) bumpTotal('rushBest', solved);
+    if (solved >= 8) confetti();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  if (p.heartsEnabled && heartsNow(p) === 0 && state !== 'done') return <NoHearts />;
   if (state === 'loading') return <p className="mono"><span className="spinner" /> Lade Puzzles …</p>;
 
   if (state === 'done' || !pz) {

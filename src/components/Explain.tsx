@@ -38,10 +38,28 @@ export default function Explain({ text, title }: { text: ExplainT; title?: strin
         ))}
       </div>
       <div className="explain-body" key={active + text.short}>
+        {'speechSynthesis' in window && (
+          <button className="speak" title="Vorlesen" aria-label="Vorlesen" onClick={() => speak(text[active] ?? text.short)}>🔊</button>
+        )}
         <Rich text={text[active] ?? text.short} />
       </div>
     </div>
   );
+}
+
+/** Text mit deutscher Stimme vorlesen (Browser-Sprachausgabe, funktioniert offline). */
+export function speak(t: string) {
+  const s = window.speechSynthesis;
+  if (s.speaking) {
+    s.cancel();
+    return;
+  }
+  const clean = t.replace(/\*\*/g, '').replace(/…/g, ' ').replace(/(\d+)\./g, 'Zug $1: ');
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = 'de-DE';
+  const v = s.getVoices().find((x) => x.lang.startsWith('de'));
+  if (v) u.voice = v;
+  s.speak(u);
 }
 
 /** Minimaler Formatierer: **fett**, Absätze. */

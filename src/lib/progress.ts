@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { load, save } from './storage';
+import { BADGES, questsFor, type DayStats } from './game';
 
 export interface ReviewCard {
   id: string;
@@ -32,6 +33,23 @@ export interface Progress {
   botResults: Record<string, { w: number; d: number; l: number }>;
   showCoords: boolean;
   sound: boolean;
+  boardTheme: 'grau' | 'kontrast' | 'papier' | 'schiefer';
+  animSpeed: number;
+  // Gamification
+  heartsEnabled: boolean;
+  hearts: number;
+  heartsAt: number;
+  streakFreezes: number;
+  bestStreak: number;
+  badges: Record<string, string>;
+  day: DayStats;
+  questsClaimed: string[];
+  placementDone: boolean;
+  placementLevel: number;
+  exams: Record<string, { best: number; passed: boolean }>;
+  trainerBest: Record<string, number>;
+  patterns: Record<string, number>;
+  totals: { perfectLessons: number; botWins: number; reviews: number; analyses: number; mastersFound: number; rushBest: number };
 }
 
 const KEY = 'chessty.progress.v1';
@@ -52,9 +70,27 @@ const initial: Progress = {
   botResults: {},
   showCoords: true,
   sound: true,
+  boardTheme: 'grau',
+  animSpeed: 220,
+  heartsEnabled: false,
+  hearts: 5,
+  heartsAt: 0,
+  streakFreezes: 0,
+  bestStreak: 0,
+  badges: {},
+  day: { date: '', puzzles: 0, lessons: 0, perfect: 0, reviews: 0, botGames: 0, masters: 0, trainers: 0, xp: 0 },
+  questsClaimed: [],
+  placementDone: false,
+  placementLevel: 1,
+  exams: {},
+  trainerBest: {},
+  patterns: {},
+  totals: { perfectLessons: 0, botWins: 0, reviews: 0, analyses: 0, mastersFound: 0, rushBest: 0 },
 };
 
 let state: Progress = load(KEY, initial);
+// Ältere Speicherstände um neue Unterobjekte ergänzen
+state = { ...state, totals: { ...initial.totals, ...state.totals }, day: { ...initial.day, ...state.day } };
 const listeners = new Set<() => void>();
 
 export const today = () => new Date().toISOString().slice(0, 10);
@@ -63,8 +99,36 @@ const dayDiff = (a: string, b: string) =>
 
 function rollDay(p: Progress): Progress {
   const t = today();
-  if (p.lastActiveDay === t) return p;
-  return { ...p, dailyXp: 0 };
+  let out = p;
+  if (p.lastActiveDay !== t && p.dailyXp) out = { ...out, dailyXp: 0 };
+  if (p.day.date !== t) out = { ...out, day: { ...initial.day, date: t }, questsClaimed: [] };
+  return out;
+}
+
+const HEART_MS = 3 * 3600 * 1000;
+/** Herzen regenerieren sich: eins alle 3 Stunden. */
+export function heartsNow(p: Progress): number {
+  if (p.hearts >= 5) return 5;
+  return Math.min(5, p.hearts + Math.floor((Date.now() - p.heartsAt) / HEART_MS));
+}
+
+/** Nach jeder Änderung: neue Abzeichen und erledigte Tagesquests gutschreiben. */
+function reward(p: Progress): Progress {
+  let out = p;
+  const newBadges = BADGES.filter((b) => !out.badges[b.id] && b.check(out));
+  if (newBadges.length) {
+    const badges = { ...out.badges };
+    for (const b of newBadges) badges[b.id] = today();
+    out = { ...out, badges };
+    setTimeout(() => window.dispatchEvent(new CustomEvent('chessty-badge', { detail: newBadges.map((b) => b.id) })), 0);
+  }
+  for (const q of questsFor(today())) {
+    if (!out.questsClaimed.includes(q.id) && q.done(out.day)) {
+      out = { ...out, questsClaimed: [...out.questsClaimed, q.id], xp: out.xp + q.xp, dailyXp: out.dailyXp + q.xp };
+      setTimeout(() => window.dispatchEvent(new CustomEvent('chessty-quest', { detail: q.id })), 0);
+    }
+  }
+  return out;
 }
 state = rollDay(state);
 
@@ -73,7 +137,7 @@ export function getProgress(): Progress {
 }
 
 export function update(fn: (p: Progress) => Progress): void {
-  state = fn(rollDay(state));
+  state = reward(fn(rollDay(state)));
   save(KEY, state);
   listeners.forEach((l) => l());
 }
@@ -93,10 +157,28 @@ export function addXp(amount: number): void {
   update((p) => {
     const t = today();
     let streak = p.streak;
+    let freezes = p.streakFreezes;
     if (p.lastActiveDay !== t) {
-      streak = p.lastActiveDay && dayDiff(p.lastActiveDay, t) === 1 ? p.streak + 1 : 1;
+      const gap = p.lastActiveDay ? dayDiff(p.lastActiveDay, t) : 99;
+      if (gap === 1) streak = p.streak + 1;
+      // Serienschutz: ein verpasster Tag wird automatisch überbrückt
+      else if (gap === 2 && freezes > 0) {
+        streak = p.streak + 1;
+        freezes--;
+      } else streak = 1;
+      // Alle 7 Tage gibt es einen Serienschutz (max. 2)
+      if (streak % 7 === 0) freezes = Math.min(2, freezes + 1);
     }
-    return { ...p, xp: p.xp + amount, dailyXp: p.dailyXp + amount, streak, lastActiveDay: t };
+    return {
+      ...p,
+      xp: p.xp + amount,
+      dailyXp: p.dailyXp + amount,
+      streak,
+      bestStreak: Math.max(p.bestStreak, streak),
+      streakFreezes: freezes,
+      lastActiveDay: t,
+      day: { ...p.day, xp: p.day.xp + amount },
+    };
   });
 }
 
@@ -106,6 +188,8 @@ export function completeLesson(id: string, stars: number, xp: number): void {
     return {
       ...p,
       lessons: { ...p.lessons, [id]: { done: true, stars: Math.max(stars, prev?.stars ?? 0) } },
+      day: { ...p.day, lessons: p.day.lessons + 1, perfect: p.day.perfect + (stars === 3 ? 1 : 0) },
+      totals: { ...p.totals, perfectLessons: p.totals.perfectLessons + (stars === 3 && !prev ? 1 : 0) },
     };
   });
   addXp(xp);
@@ -128,6 +212,7 @@ export function recordPuzzle(id: string, rating: number, themes: string[], solve
       puzzlesFailed: p.puzzlesFailed + (solved ? 0 : 1),
       puzzleSeen: [...p.puzzleSeen.slice(-3000), id],
       themeStats,
+      day: { ...p.day, puzzles: p.day.puzzles + (solved ? 1 : 0) },
     };
   });
 }
@@ -145,6 +230,11 @@ export function addReview(card: Omit<ReviewCard, 'due' | 'interval' | 'ease' | '
 export function gradeReview(id: string, correct: boolean): void {
   update((p) => ({
     ...p,
+    day: { ...p.day, reviews: p.day.reviews + 1 },
+    totals: { ...p.totals, reviews: p.totals.reviews + 1 },
+    // Richtige Wiederholungen füllen ein Herz auf
+    hearts: correct ? Math.min(5, heartsNow(p) + 1) : heartsNow(p),
+    heartsAt: Date.now(),
     review: p.review
       .map((c) => {
         if (c.id !== id) return c;
@@ -159,6 +249,59 @@ export function gradeReview(id: string, correct: boolean): void {
 
 export function removeReview(id: string): void {
   update((p) => ({ ...p, review: p.review.filter((c) => c.id !== id) }));
+}
+
+/** Fortschritt als JSON-Datei sichern. */
+export function exportProgress(): void {
+  const blob = new Blob([JSON.stringify({ app: 'chessty', version: 1, data: state }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `chessty-fortschritt-${today()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Gesicherten Fortschritt wieder einlesen. */
+export async function importProgress(file: File): Promise<boolean> {
+  try {
+    const json = JSON.parse(await file.text());
+    if (json.app !== 'chessty' || typeof json.data !== 'object') return false;
+    update(() => ({ ...initial, ...json.data }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Herz verlieren (nur wenn Herzen aktiviert sind). */
+export function loseHeart(): void {
+  update((p) => (p.heartsEnabled ? { ...p, hearts: Math.max(0, heartsNow(p) - 1), heartsAt: Date.now() } : p));
+}
+
+/** Zähler für Tagesquests und Statistik erhöhen. */
+export function bump(key: keyof Omit<DayStats, 'date'>, n = 1): void {
+  update((p) => ({ ...p, day: { ...p.day, [key]: p.day[key] + n } }));
+}
+
+export function bumpTotal(key: keyof Progress['totals'], n = 1): void {
+  update((p) => ({ ...p, totals: { ...p.totals, [key]: key === 'rushBest' ? Math.max(p.totals.rushBest, n) : p.totals[key] + n } }));
+}
+
+/** Fehlermuster aus analysierten eigenen Partien zählen. */
+export function addPatterns(list: string[]): void {
+  update((p) => {
+    const patterns = { ...p.patterns };
+    for (const k of list) patterns[k] = (patterns[k] ?? 0) + 1;
+    return { ...p, patterns, totals: { ...p.totals, analyses: p.totals.analyses + 1 } };
+  });
+}
+
+export function recordTrainer(id: string, score: number): void {
+  update((p) => ({
+    ...p,
+    trainerBest: { ...p.trainerBest, [id]: Math.max(score, p.trainerBest[id] ?? 0) },
+    day: { ...p.day, trainers: p.day.trainers + 1 },
+  }));
 }
 
 export function resetProgress(): void {
