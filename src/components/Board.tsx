@@ -153,7 +153,12 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
   };
 
   return (
-    <div className={`board-wrap theme-${boardTheme} ` + (className ?? '')}>
+    <div
+      className={`board-wrap theme-${boardTheme} ` + (className ?? '')}
+      // Chessground merkt sich die Brettposition; verschiebt sich das Layout (z. B. Uhr oder Hinweis darüber),
+      // stimmen Klicks sonst nicht mehr. Vor jeder Berührung deshalb neu vermessen.
+      onPointerDownCapture={() => api.current?.state.dom.bounds.clear()}
+    >
       <div ref={el} className="cg-board-el" />
       <div className="sr-only" aria-live="polite">{announce}</div>
       {promo && (

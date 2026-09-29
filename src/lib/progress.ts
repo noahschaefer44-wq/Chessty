@@ -49,6 +49,7 @@ export interface Progress {
   exams: Record<string, { best: number; passed: boolean }>;
   trainerBest: Record<string, number>;
   patterns: Record<string, number>;
+  weekXp: { week: string; xp: number };
   totals: { perfectLessons: number; botWins: number; reviews: number; analyses: number; mastersFound: number; rushBest: number };
 }
 
@@ -85,6 +86,7 @@ const initial: Progress = {
   exams: {},
   trainerBest: {},
   patterns: {},
+  weekXp: { week: '', xp: 0 },
   totals: { perfectLessons: 0, botWins: 0, reviews: 0, analyses: 0, mastersFound: 0, rushBest: 0 },
 };
 
@@ -94,6 +96,16 @@ state = { ...state, totals: { ...initial.totals, ...state.totals }, day: { ...in
 const listeners = new Set<() => void>();
 
 export const today = () => new Date().toISOString().slice(0, 10);
+
+/** ISO-Kalenderwoche, z. B. 2026-W40 (wie auf dem Server). */
+export function isoWeek(d = new Date()): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const w = Math.ceil(((t.getTime() - y0.getTime()) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(w).padStart(2, '0')}`;
+}
 const dayDiff = (a: string, b: string) =>
   Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
@@ -142,6 +154,11 @@ export function update(fn: (p: Progress) => Progress): void {
   listeners.forEach((l) => l());
 }
 
+export function subscribeProgress(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
 export function useProgress(): Progress {
   return useSyncExternalStore(
     (l) => {
@@ -178,6 +195,7 @@ export function addXp(amount: number): void {
       streakFreezes: freezes,
       lastActiveDay: t,
       day: { ...p.day, xp: p.day.xp + amount },
+      weekXp: { week: isoWeek(), xp: (p.weekXp?.week === isoWeek() ? p.weekXp.xp : 0) + amount },
     };
   });
 }

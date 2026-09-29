@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './styles/global.css';
+import { startAutoSync } from './lib/cloud';
+import { subscribeProgress } from './lib/progress';
 
 // Neue Version: Hinweis anzeigen statt still zu aktualisieren
 const updateSW = registerSW({
@@ -20,6 +22,8 @@ try {
 } catch {
   /* egal */
 }
+
+startAutoSync(subscribeProgress);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

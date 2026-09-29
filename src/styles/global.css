@@ -484,3 +484,13 @@ cg-board piece.dragging { filter: drop-shadow(4px 6px 0 rgba(0,0,0,.35)); }
 .clock b { font-size: 24px; }
 .clock.running { background: var(--fg); color: var(--bg); }
 .clock.running.low b { animation: blink .5s steps(2) infinite; }
+.nav { overflow: visible; }
+.more { position: relative; }
+.more > button { background: none; border: 0; cursor: pointer; padding: 8px 10px; font-weight: 500; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; position: relative; }
+.more > button.active::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 2px; height: 3px; background: currentColor; }
+.more-menu { position: absolute; right: 0; top: 100%; min-width: 230px; background: var(--bg); border: 2px solid var(--fg); box-shadow: 6px 6px 0 var(--fg);
+  display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .2s, transform .25s var(--snap); z-index: 70; }
+.more:hover .more-menu, .more:focus-within .more-menu { opacity: 1; pointer-events: auto; transform: none; }
+.more-menu a { padding: 10px 14px; text-decoration: none; font-size: 14px; border-bottom: 1px solid var(--g2); transition: background .15s, color .15s, padding .2s var(--ease); }
+.more-menu a:hover { background: var(--fg); color: var(--bg); padding-left: 20px; }
+@media (max-width: 1200px) { .nav a { padding: 8px 7px; font-size: 13px; letter-spacing: .03em; } .more > button { font-size: 13px; padding: 8px 7px; } }

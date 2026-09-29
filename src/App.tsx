@@ -1,40 +1,43 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRoute } from './lib/router';
 import { useProgress, levelFromXp, heartsNow } from './lib/progress';
 import { BADGES, questsFor } from './lib/game';
 import { confetti } from './lib/confetti';
 import { today } from './lib/progress';
 import Home from './pages/Home';
-import LessonPlayer from './pages/LessonPlayer';
-import Learn from './pages/Learn';
-import Puzzles from './pages/Puzzles';
-import PuzzleSession from './pages/PuzzleSession';
-import Openings from './pages/Openings';
-import OpeningDrill from './pages/OpeningDrill';
-import Explorer from './pages/Explorer';
-import Endgames from './pages/Endgames';
-import EndgamePractice from './pages/EndgamePractice';
-import Masters from './pages/Masters';
-import MasterGamePlayer from './pages/MasterGamePlayer';
-import Play from './pages/Play';
-import Analysis from './pages/Analysis';
-import Review from './pages/Review';
-import Profile from './pages/Profile';
-import Glossary from './pages/Glossary';
-import Editor from './pages/Editor';
-import ExamPlayer from './pages/ExamPlayer';
-import Placement from './pages/Placement';
-import Training from './pages/Training';
-import Coordinates from './pages/trainers/Coordinates';
-import Colors from './pages/trainers/Colors';
-import Blind from './pages/trainers/Blind';
-import Hanging from './pages/trainers/Hanging';
-import Calc from './pages/trainers/Calc';
-import Threat from './pages/trainers/Threat';
-import Candidates from './pages/trainers/Candidates';
-import EvalGuess from './pages/trainers/EvalGuess';
-import Rebuild from './pages/trainers/Rebuild';
-import GuessMove from './pages/trainers/GuessMove';
+const LessonPlayer = lazy(() => import('./pages/LessonPlayer'));
+const Learn = lazy(() => import('./pages/Learn'));
+const Puzzles = lazy(() => import('./pages/Puzzles'));
+const PuzzleSession = lazy(() => import('./pages/PuzzleSession'));
+const Openings = lazy(() => import('./pages/Openings'));
+const OpeningDrill = lazy(() => import('./pages/OpeningDrill'));
+const Explorer = lazy(() => import('./pages/Explorer'));
+const Endgames = lazy(() => import('./pages/Endgames'));
+const EndgamePractice = lazy(() => import('./pages/EndgamePractice'));
+const Masters = lazy(() => import('./pages/Masters'));
+const MasterGamePlayer = lazy(() => import('./pages/MasterGamePlayer'));
+const Play = lazy(() => import('./pages/Play'));
+const Analysis = lazy(() => import('./pages/Analysis'));
+const Review = lazy(() => import('./pages/Review'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Glossary = lazy(() => import('./pages/Glossary'));
+const Editor = lazy(() => import('./pages/Editor'));
+const ExamPlayer = lazy(() => import('./pages/ExamPlayer'));
+const Placement = lazy(() => import('./pages/Placement'));
+const Training = lazy(() => import('./pages/Training'));
+const Coordinates = lazy(() => import('./pages/trainers/Coordinates'));
+const Colors = lazy(() => import('./pages/trainers/Colors'));
+const Blind = lazy(() => import('./pages/trainers/Blind'));
+const Hanging = lazy(() => import('./pages/trainers/Hanging'));
+const Calc = lazy(() => import('./pages/trainers/Calc'));
+const Threat = lazy(() => import('./pages/trainers/Threat'));
+const Candidates = lazy(() => import('./pages/trainers/Candidates'));
+const EvalGuess = lazy(() => import('./pages/trainers/EvalGuess'));
+const Rebuild = lazy(() => import('./pages/trainers/Rebuild'));
+const GuessMove = lazy(() => import('./pages/trainers/GuessMove'));
+const Community = lazy(() => import('./pages/Community'));
+const DailyPuzzle = lazy(() => import('./pages/DailyPuzzle'));
+const Online = lazy(() => import('./pages/Online'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 const NAV = [
@@ -45,11 +48,18 @@ const NAV = [
   { path: 'meister', label: 'Meister', ico: '♛' },
   { path: 'training', label: 'Training', ico: '✚' },
   { path: 'spielen', label: 'Spielen', ico: '▶' },
-  { path: 'analyse', label: 'Analyse', ico: '⌕' },
-  { path: 'fehlerheft', label: 'Fehlerheft', ico: '↻' },
-  { path: 'begriffe', label: 'Begriffe', ico: '≡' },
+  { path: 'community', label: 'Community', ico: '◎' },
 ];
-const MOBILE = ['', 'taktik', 'training', 'spielen', 'profil'];
+const MORE = [
+  { path: 'analyse', label: 'Partieanalyse' },
+  { path: 'fehlerheft', label: 'Fehlerheft' },
+  { path: 'begriffe', label: 'Fachbegriffe' },
+  { path: 'editor', label: 'Brett-Editor' },
+  { path: 'tagespuzzle', label: 'Tagespuzzle' },
+  { path: 'einstufung', label: 'Einstufungstest' },
+  { path: 'profil', label: 'Profil & Einstellungen' },
+];
+const MOBILE = ['', 'taktik', 'training', 'spielen', 'mehr'];
 
 function page(r: string[]) {
   switch (r[0]) {
@@ -89,6 +99,12 @@ function page(r: string[]) {
         case 'raten': return <GuessMove />;
         default: return <Training />;
       }
+    case 'community':
+      return <Community />;
+    case 'tagespuzzle':
+      return <DailyPuzzle />;
+    case 'online':
+      return <Online code={r[1]} key={r[1] ?? 'neu'} />;
     case 'begriffe':
       return <Glossary id={r[1]} />;
     case 'editor':
@@ -97,11 +113,25 @@ function page(r: string[]) {
       return <Analysis />;
     case 'fehlerheft':
       return <Review />;
+    case 'mehr':
+      return <MoreMenu />;
     case 'profil':
       return <Profile />;
     default:
       return <Home />;
   }
+}
+
+/** Mobile Übersicht aller Bereiche. */
+function MoreMenu() {
+  return (
+    <>
+      <div className="page-head"><div className="kicker">Alle Bereiche</div><h1>Mehr</h1></div>
+      <div className="list">
+        {[...NAV.slice(2), ...MORE].map((m) => <a key={m.path} href={'#/' + m.path}><b style={{ flex: 1 }}>{m.label}</b> →</a>)}
+      </div>
+    </>
+  );
 }
 
 export default function App() {
@@ -167,6 +197,12 @@ export default function App() {
               {n.label}
             </a>
           ))}
+          <div className="more">
+            <button className={MORE.some((m) => m.path === cur) ? 'active' : ''} aria-haspopup="true">Mehr ▾</button>
+            <div className="more-menu">
+              {MORE.map((m) => <a key={m.path} href={'#/' + m.path}>{m.label}</a>)}
+            </div>
+          </div>
         </nav>
         <div className="topstats">
           {!online && <span className="tag">offline</span>}
@@ -181,7 +217,9 @@ export default function App() {
         </div>
       </header>
       <main className="main" key={route.join('/')}>
-        <ErrorBoundary resetKey={route.join('/')}>{page(route)}</ErrorBoundary>
+        <ErrorBoundary resetKey={route.join('/')}>
+          <Suspense fallback={<p className="mono"><span className="spinner" /> Lade …</p>}>{page(route)}</Suspense>
+        </ErrorBoundary>
       </main>
       <footer className="footer">
         Chessty · kostenlos & Open Source (GPL-3) · Engine: Stockfish 19 · Puzzles & Eröffnungsnamen: Lichess (CC0)
@@ -203,7 +241,7 @@ export default function App() {
       )}
       <nav className="bottomnav" aria-label="Navigation">
         {MOBILE.map((path) => {
-          const n = NAV.find((x) => x.path === path) ?? { path: 'profil', label: 'Profil', ico: '●' };
+          const n = NAV.find((x) => x.path === path) ?? { path: 'mehr', label: 'Mehr', ico: '≡' };
           return (
             <a key={path} href={'#/' + path} className={isActive(path) ? 'active' : ''}>
               <span className="ico">{n.ico}</span>
