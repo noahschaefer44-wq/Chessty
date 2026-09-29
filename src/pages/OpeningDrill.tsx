@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import { lessonById } from '../content';
-import { addReview, addXp } from '../lib/progress';
+import { addReview, addXp, useProgress } from '../lib/progress';
 import { tryMove, sanDe, uci } from '../lib/chess';
 import { stripSan } from '../content/walk';
 import { sound } from '../lib/sound';
@@ -18,6 +18,7 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
   const [flash, setFlash] = useState('');
   const [name, setName] = useState('');
   const [round, setRound] = useState(0);
+  const prog = useProgress();
 
   const positions = useMemo(() => {
     const c = new Chess();
@@ -124,6 +125,9 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
             <button className="btn small" onClick={() => { setPly(0); setErrors(0); setArrows([]); setMsg(''); setRound((r) => r + 1); }}>Neu starten</button>
             <a className="btn small ghost" href={'#/lektion/' + lesson.id}>Zur Lektion</a>
             <span className="spacer" />
+            {done && prog.repertoire.length > 0 && (
+              <a className="btn small" href="#/eroeffnungen/repertoire">Nächste aus meinem Repertoire</a>
+            )}
             {done && lesson.drill && line + 1 < lesson.drill.length && (
               <a className="btn primary" href={`#/eroeffnungen/training/${id}/${line + 1}`}>Nächste Variante <span className="arrow">→</span></a>
             )}

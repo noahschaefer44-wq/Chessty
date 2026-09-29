@@ -60,7 +60,10 @@ for (const l of lessons) {
     f[1] = f[1] === 'w' ? 'b' : 'w';
     f[3] = '-';
     try {
-      if (new Chess(f.join(' ')).inCheck()) warn(`${l.id} #${i + 1}: illegale Stellung (König kann geschlagen werden)`);
+      if (new Chess(f.join(' ')).inCheck()) {
+        warn(`${l.id} #${i + 1}: illegale Stellung (König kann geschlagen werden)`);
+        continue; // Stockfish würde an dieser Stellung hängen bleiben
+      }
     } catch (e) {
       warn(`${l.id} #${i + 1}: ${e}`);
     }

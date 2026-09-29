@@ -494,3 +494,14 @@ cg-board piece.dragging { filter: drop-shadow(4px 6px 0 rgba(0,0,0,.35)); }
 .more-menu a { padding: 10px 14px; text-decoration: none; font-size: 14px; border-bottom: 1px solid var(--g2); transition: background .15s, color .15s, padding .2s var(--ease); }
 .more-menu a:hover { background: var(--fg); color: var(--bg); padding-left: 20px; }
 @media (max-width: 1200px) { .nav a { padding: 8px 7px; font-size: 13px; letter-spacing: .03em; } .more > button { font-size: 13px; padding: 8px 7px; } }
+.knowledge-body { font-size: 18px; line-height: 1.65; }
+.knowledge-fig { float: right; margin: 0 0 16px 24px; width: 300px; max-width: 45%; }
+.knowledge-fig figcaption { font-size: 13px; margin-top: 6px; }
+@media (max-width: 640px) { .knowledge-fig { float: none; margin: 0 0 16px; max-width: 100%; width: 100%; } }
+.timeline { position: relative; display: flex; flex-direction: column; gap: 14px; padding-left: 28px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; border-left: 3px solid var(--fg); }
+.timeline > a { position: relative; }
+.timeline > a::before { content: ''; position: absolute; left: -27px; top: 22px; width: 14px; height: 14px; background: var(--bg); border: 3px solid var(--fg); transform: rotate(45deg); transition: background .2s; }
+.timeline > a:hover::before { background: var(--fg); }
+.star { background: none; border: 0; font-size: 24px; cursor: pointer; line-height: 1; transition: transform .25s var(--snap); }
+.star:hover { transform: scale(1.3) rotate(15deg); }

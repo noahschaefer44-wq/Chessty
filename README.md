@@ -1,31 +1,46 @@
 # Chessty
 
-Kostenlose, interaktive Schach-Lern-App (PWA, offline nutzbar) – vom Einsteiger bis zum Meister.
+Kostenlose, interaktive Schach-Lern-App (PWA, offline nutzbar) – vom Einsteiger bis zum Meister. Komplett auf Deutsch.
 
 **Live:** https://chessty.netlify.app
 
-## Inhalte
-- **Lernpfad** (Duolingo-Stil) mit XP, Serie, Tagesziel und Stufen
-- **36 Lektionen** in Grundlagen, Taktik, Strategie, Eröffnungen, Endspiele – jede Erklärung in drei Tiefen (Kurz / Warum? / Profi), mit Pfeilen, typischen Fehlern und „Warum nicht …?“-Engine-Modus
-- **Taktik-Training**: 30 Motive × 4 Stufen aus der Lichess-Puzzle-Datenbank, **max. 10 Puzzles pro Runde**, Puzzle-Rush
-- **Eröffnungen**: 9 Eröffnungslektionen mit Fallen, Varianten-Training und Explorer (3.800 benannte Varianten)
+## Lernen
+- **Lernpfad** (Duolingo-Stil) mit XP, Serie, Serienschutz, Tagesziel, Tagesquests, optionalen Herzen, Wiederholungs-Knoten und Kapitelprüfungen
+- **57 Lektionen** in Grundlagen, Taktik, Strategie, Eröffnungen, Endspiele – jede Erklärung in drei Tiefen (Kurz / Warum? / Profi), mit Pfeilen, typischen Fehlern, Vorlesefunktion und „Warum nicht …?“-Engine-Modus
+- **Einstufungstest** (10 adaptive Aufgaben) schaltet passende Lektionen frei
+- **17 Eröffnungen** mit Fallen, Varianten-Training, persönlichem Repertoire und Explorer (3.800 Varianten, deutsche Namen)
 - **Endspiel-Praxis** gegen perfekte Verteidigung (Lichess-Tablebase, offline Stockfish)
-- **9 Meisterpartien** (Morphy, Anderssen, Fischer, Tal, Kasparow, Capablanca) mit „Finde den Zug“
-- **6 Bots** (Stockfish 19 mit Stärkestufen), **Partieanalyse** mit Erklärungen in einfacher Sprache
+- **14 Meisterpartien** (Morphy bis Kasparow) mit „Finde den Zug“
+- **Fachbegriffe-Heft** mit 111 Begriffen und Diagrammen
+- **Geschichte & Regeln** in 14 kurzen Kapiteln
+
+## Trainieren
+- **Taktik**: 30 Motive × 4 Stufen aus der Lichess-Puzzle-Datenbank, **max. 10 Puzzles pro Runde**, Puzzle-Rush, Tagespuzzle mit Rangliste
+- **10 Trainer**: Koordinaten, Feldfarben, Blindschach, Stellung nachbauen, hängende Figuren, „Was droht?“, Kandidatenzüge, Rechnen, Bewertung schätzen, „Rate den Meisterzug“
 - **Fehlerheft** mit Spaced Repetition
+
+## Spielen & Analysieren
+- **10 Bots** (6 Stärken + 4 Persönlichkeiten), Schachuhren, Zug-Kommentare, Tipps
+- **Online-Partien** per Link (Supabase Realtime, sonst Server-Abfrage)
+- **Partieanalyse** mit Import von Lichess/Chess.com, Fehlermustern und Eröffnungs-Check
+- **Brett-Editor**
+
+## Community (freiwillig, ohne E-Mail)
+Konto mit Name + geheimem Sync-Code, Sync zwischen Geräten, Freunde per Code, Wochenliga (Bronze bis Diamant), Tages-Rangliste. Backend: Supabase; alle Zugriffe über geprüfte Datenbankfunktionen, Tabellen sind direkt nicht erreichbar.
 
 ## Entwicklung
 ```bash
 npm install
-npm run dev        # Entwicklungsserver
-npm run build      # Produktions-Build nach dist/
-npm run validate   # prüft alle Lektionen mit Stockfish und der Endspiel-Datenbank
+npm run dev                # Entwicklungsserver
+npm run build              # Produktions-Build nach dist/
+npm run validate           # prüft alle Lektionen mit Stockfish und der Endspiel-Datenbank
+npm run validate:glossary  # prüft alle Diagramme des Fachbegriffe-Hefts
 ```
 
-Die Lektionen liegen als TypeScript-Daten in `src/content/` und können ohne Programmierkenntnisse erweitert werden.
+Die Inhalte liegen als TypeScript-Daten in `src/content/`. GitHub Actions baut und prüft bei jedem Push.
 
 ## Lizenzen & Quellen
 - Code: GPL-3.0-or-later
-- Stockfish 19 (stockfish.js, GPL-3), Chessground (GPL-3), chess.js (BSD)
+- Stockfish 19 (stockfish.js, GPL-3), Chessground (GPL-3), chess.js (BSD), Supabase JS (MIT)
 - Puzzles und Eröffnungsnamen: Lichess-Datenbanken (CC0)
 - Meisterpartien: PGN Mentor (Partienotationen sind gemeinfrei); alle Kommentare sind eigene Texte

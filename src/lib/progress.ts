@@ -50,6 +50,7 @@ export interface Progress {
   trainerBest: Record<string, number>;
   patterns: Record<string, number>;
   weekXp: { week: string; xp: number };
+  repertoire: string[];
   totals: { perfectLessons: number; botWins: number; reviews: number; analyses: number; mastersFound: number; rushBest: number };
 }
 
@@ -87,6 +88,7 @@ const initial: Progress = {
   trainerBest: {},
   patterns: {},
   weekXp: { week: '', xp: 0 },
+  repertoire: [],
   totals: { perfectLessons: 0, botWins: 0, reviews: 0, analyses: 0, mastersFound: 0, rushBest: 0 },
 };
 

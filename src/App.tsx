@@ -35,6 +35,8 @@ const Candidates = lazy(() => import('./pages/trainers/Candidates'));
 const EvalGuess = lazy(() => import('./pages/trainers/EvalGuess'));
 const Rebuild = lazy(() => import('./pages/trainers/Rebuild'));
 const GuessMove = lazy(() => import('./pages/trainers/GuessMove'));
+const RepertoireDrill = lazy(() => import('./pages/RepertoireDrill'));
+const Knowledge = lazy(() => import('./pages/Knowledge'));
 const Community = lazy(() => import('./pages/Community'));
 const DailyPuzzle = lazy(() => import('./pages/DailyPuzzle'));
 const Online = lazy(() => import('./pages/Online'));
@@ -54,6 +56,7 @@ const MORE = [
   { path: 'analyse', label: 'Partieanalyse' },
   { path: 'fehlerheft', label: 'Fehlerheft' },
   { path: 'begriffe', label: 'Fachbegriffe' },
+  { path: 'wissen', label: 'Geschichte & Regeln' },
   { path: 'editor', label: 'Brett-Editor' },
   { path: 'tagespuzzle', label: 'Tagespuzzle' },
   { path: 'einstufung', label: 'Einstufungstest' },
@@ -74,6 +77,7 @@ function page(r: string[]) {
     case 'eroeffnungen':
       if (r[1] === 'training') return <OpeningDrill id={r[2]} line={Number(r[3] ?? 0)} />;
       if (r[1] === 'explorer') return <Explorer />;
+      if (r[1] === 'repertoire') return <RepertoireDrill />;
       return <Openings />;
     case 'endspiele':
       return r[1] === 'praxis' ? <EndgamePractice id={r[2]} /> : <Endgames />;
@@ -99,6 +103,8 @@ function page(r: string[]) {
         case 'raten': return <GuessMove />;
         default: return <Training />;
       }
+    case 'wissen':
+      return <Knowledge id={r[1]} />;
     case 'community':
       return <Community />;
     case 'tagespuzzle':

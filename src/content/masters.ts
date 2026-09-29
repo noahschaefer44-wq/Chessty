@@ -550,4 +550,233 @@ export const MASTERS: MasterGame[] = [
       short: 'Aktiver König, Turm auf der 7. Reihe, Freibauer – die drei Trümpfe im Turmendspiel.',
     },
   },
+  {
+    id: 'reti-tartakower-1910',
+    title: 'Rétis Damenopfer',
+    white: 'Richard Réti',
+    black: 'Sawielly Tartakower',
+    event: 'Wien',
+    year: 1910,
+    result: '1-0',
+    hero: 'white',
+    level: 2,
+    intro: {
+      short: 'Eine der kürzesten Meisterpartien: Nach elf Zügen setzt Réti mit einem Damenopfer und Doppelschach matt.',
+      why: 'Schwarz schlägt im Caro-Kann gierig Material und lässt den König in der Mitte – Réti bestraft das sofort.',
+    },
+    moves: MOVES['reti-tartakower-1910'],
+    notes: { 11: '…Da5+ – Schwarz holt den Bauern zurück, aber die Dame zieht zum zweiten Mal.', 15: '…Sxe4?? – ein Bauer mehr, doch jetzt kommt die Katastrophe.' },
+    moments: [
+      {
+        ply: 14,
+        prompt: { short: 'Weiß ist weiter entwickelt. Welcher Zug bringt den König in Sicherheit UND einen Turm auf die offene d-Linie?' },
+        explain: { short: '9.O-O-O! – der Turm steht sofort auf d1 gegenüber dem schwarzen König. Schwarz nimmt gierig den Springer e4 …' },
+      },
+      {
+        ply: 16,
+        prompt: {
+          short: 'Der schwarze König steht auf e8, die d-Linie ist offen. Finde das unglaubliche Opfer!',
+          why: 'Welcher Zug zwingt den König auf ein Feld, auf dem ein Doppelschach möglich ist?',
+        },
+        explain: {
+          short: '10.Dd8+!! Kxd8 – die Dame lockt den König auf die d-Linie (Hinlenkung).',
+          why: 'Jetzt stehen Turm d1 und Läufer d2 hintereinander auf der d-Linie – der Läufer kann mit Abzugsschach ziehen.',
+        },
+        arrows: ['d3d8'],
+      },
+      {
+        ply: 18,
+        prompt: { short: 'Jetzt das Doppelschach!' },
+        explain: { short: '11.Lg5++ – Läufer und Turm geben gleichzeitig Schach. Nach …Kc7 folgt Ld8#; nach …Ke8 Td8#.' },
+      },
+      {
+        ply: 20,
+        prompt: { short: 'Setze matt.' },
+        explain: { short: '12.Ld8# – der Läufer ist vom Turm d1 gedeckt. Ein klassisches Mattbild aus Hinlenkung und Doppelschach.' },
+      },
+    ],
+    outro: { short: 'Entwicklungsvorsprung + König in der Mitte + offene Linie = Katastrophe. Nie Material nehmen, wenn der eigene König ungeschützt ist.' },
+  },
+  {
+    id: 'rotlewi-rubinstein-1907',
+    title: 'Rubinsteins Unsterbliche',
+    white: 'Georg Rotlewi',
+    black: 'Akiba Rubinstein',
+    event: 'Łódź',
+    year: 1907,
+    result: '0-1',
+    hero: 'black',
+    level: 4,
+    intro: {
+      short: 'Rubinstein opfert die Dame und einen Turm – seine beiden Läufer auf den langen Diagonalen zerstören den weißen König.',
+      why: 'Weiß vernachlässigte die Entwicklung am Königsflügel. Die schwarzen Läufer b7 und b6 zielen wie Kanonen auf g2 und g1.',
+      pro: 'Die Kombination ab 22…Txc3!! gilt als eine der schönsten der Schachgeschichte – jeder Zug ist erzwungen.',
+    },
+    moves: MOVES['rotlewi-rubinstein-1907'],
+    moments: [
+      {
+        ply: 43,
+        prompt: {
+          short: 'Weiß hat mit g3 die Dame h4 angegriffen. Rubinstein lässt sie stehen – und opfert noch mehr!',
+          why: 'Welche Figur schützt den weißen König auf der langen Diagonale? Beseitige sie!',
+        },
+        explain: {
+          short: '22…Txc3!! – nimmt der Bauer die Dame (gxh4), folgt …Td2!! und die Läufer sind nicht zu stoppen.',
+          pro: 'Nach 23.gxh4 Td2!! 24.Dxd2 Lxe4+ 25.Dg2 Th3!! ist Matt nicht mehr abzuwenden.',
+        },
+      },
+      {
+        ply: 45,
+        prompt: { short: 'Weiß hat die Dame genommen. Jetzt ein zweites Opfer, das die Dame e2 ablenkt!' },
+        explain: { short: '23…Td2!! – der Turm greift die Dame an und blockiert ihre Verteidigung der zweiten Reihe.' },
+      },
+      {
+        ply: 47,
+        prompt: { short: 'Die Dame hat den Turm genommen. Nun der Läufer – mit Schach!' },
+        explain: { short: '24…Lxe4+ – der Läufer b7 schlägt mit Schach, die Diagonale a8–h1 ist offen.' },
+      },
+      {
+        ply: 49,
+        prompt: { short: 'Der letzte, stille Schlag.' },
+        explain: { short: '25…Th3!! – Matt auf h2 ist nicht zu verhindern. Rotlewi gab auf.' },
+      },
+    ],
+    outro: { short: 'Zwei Läufer auf benachbarten langen Diagonalen gegen einen König ohne Verteidiger – gewaltig.' },
+  },
+  {
+    id: 'botvinnik-capablanca-1938',
+    title: 'Botwinniks AVRO-Kombination',
+    white: 'Michail Botwinnik',
+    black: 'José Raúl Capablanca',
+    event: 'AVRO-Turnier',
+    year: 1938,
+    result: '1-0',
+    hero: 'white',
+    level: 4,
+    intro: {
+      short: 'Der junge Botwinnik schlägt den Ex-Weltmeister mit einer tiefen Kombination, die mit dem stillen Läuferopfer 30.La3!! beginnt.',
+      why: 'Weiß hat ein starkes Zentrum und einen gefährlichen Freibauern e6. Die schwarzen Figuren stehen am Damenflügel – weit weg vom König.',
+    },
+    moves: MOVES['botvinnik-capablanca-1938'],
+    moments: [
+      {
+        ply: 58,
+        prompt: {
+          short: 'Die schwarze Dame deckt e7. Lenke sie ab – mit einem Läuferopfer!',
+          why: 'Der Freibauer e6 will nach e7. Welcher Läuferzug greift das Feld e7 an und lockt die Dame weg?',
+        },
+        explain: {
+          short: '30.La3!! Dxa3 – der Läufer lenkt die Dame von der Verteidigung der e-Linie ab.',
+          pro: 'Nach 30…Dxa3 folgt 31.Sh5+!! gxh5 32.Dg5+ Kf8 33.Dxf6+ Kg8 34.e7 – der Bauer ist nicht mehr aufzuhalten.',
+        },
+      },
+      {
+        ply: 60,
+        prompt: { short: 'Jetzt ein Springeropfer mit Schach, das den Königsflügel öffnet!' },
+        explain: { short: '31.Sh5+!! gxh5 – der Springer reißt die schwarze Königsstellung auf.' },
+      },
+      {
+        ply: 62,
+        prompt: { short: 'Die Dame greift mit Schach an.' },
+        explain: { short: '32.Dg5+ Kf8 33.Dxf6+ – der Springer f6, der e8 deckte, ist weg.' },
+      },
+      {
+        ply: 66,
+        prompt: { short: 'Der Freibauer marschiert!' },
+        explain: { short: '34.e7 – der Bauer droht umzuwandeln. Schwarz hat nur noch Dauerschachs, die der weiße König am Ende entkommt.' },
+      },
+    ],
+    outro: { short: 'Ablenkung + Königsangriff + Freibauer: Botwinnik verband drei Motive zu einer einzigen, erzwungenen Kombination.' },
+  },
+  {
+    id: 'karpov-kasparov-1985',
+    title: 'Kasparows Krake',
+    white: 'Anatoli Karpow',
+    black: 'Garri Kasparow',
+    event: 'WM-Kampf Moskau, Partie 16',
+    year: 1985,
+    result: '0-1',
+    hero: 'black',
+    level: 4,
+    intro: {
+      short: 'Ein Springer auf d3 – mitten im weißen Lager – lähmt Karpows gesamte Stellung. Kasparow gewann diese Partie und später den WM-Titel.',
+      why: 'Kasparow opferte einen Bauern für einen Springer, der wie eine Krake alle wichtigen Felder kontrolliert.',
+    },
+    moves: MOVES['karpov-kasparov-1985'],
+    moments: [
+      {
+        ply: 31,
+        prompt: {
+          short: 'Der Springer b4 sucht sein Traumfeld – tief in der weißen Stellung.',
+          why: 'Welches Feld kann kein weißer Bauer mehr angreifen?',
+        },
+        explain: {
+          short: '16…Sd3! – die „Krake“. Der Springer kann nicht vertrieben werden und kontrolliert b2, c1, e1, f2.',
+          pro: 'Kasparow sagte später, diese Stellung habe er in der Vorbereitung gesehen: Der Mehrbauer von Weiß ist wertlos, solange der Springer auf d3 steht.',
+        },
+      },
+      {
+        ply: 35,
+        prompt: { short: 'Jetzt am Damenflügel Raum gewinnen und den Springer a3/b1 weiter einsperren.' },
+        explain: { short: '18…b4! – die weißen Springer auf b1 und a3/a4 haben kaum Felder.' },
+      },
+      {
+        ply: 65,
+        prompt: { short: 'Die Entscheidung naht: Der zweite Springer greift an!' },
+        explain: { short: '33…Se4! – beide Springer greifen jetzt gemeinsam an, der weiße König wird zum Ziel.' },
+      },
+      {
+        ply: 67,
+        prompt: { short: 'Die Gabel mit Schach!' },
+        explain: { short: '34…Sf2+ – ein Springer opfert sich, und Schwarz gewinnt entscheidend Material.' },
+      },
+    ],
+    outro: { short: 'Eine einzige, perfekt platzierte Figur kann mehr wert sein als ein Bauer oder sogar eine Qualität.' },
+  },
+  {
+    id: 'short-timman-1991',
+    title: 'Shorts Königsmarsch',
+    white: 'Nigel Short',
+    black: 'Jan Timman',
+    event: 'Tilburg',
+    year: 1991,
+    result: '1-0',
+    hero: 'white',
+    level: 3,
+    intro: {
+      short: 'Mitten im Mittelspiel, mit den Damen auf dem Brett, marschiert der weiße König von g1 bis g5 – Timman gibt auf, weil Kh6 und Dg7 matt nicht zu verhindern sind.',
+      why: 'Die schwarzen Figuren sind so gebunden, dass der weiße König als zusätzlicher Angreifer dienen kann.',
+      pro: 'Eine der berühmtesten Partien der 90er – ein Beweis, dass Prinzipien („König in Sicherheit“) Ausnahmen haben, wenn man konkret rechnet.',
+    },
+    moves: MOVES['short-timman-1991'],
+    moments: [
+      {
+        ply: 60,
+        prompt: {
+          short: 'Weiß droht Matt auf g7, aber es fehlt ein Angreifer. Welcher Figur fällt das zu?',
+          why: 'Die Dame f6 und der Turm d7 binden Schwarz. Was, wenn der König nach h6 geht?',
+        },
+        explain: {
+          short: '31.Kh2!! – der König startet seinen Marsch: Kg3, Kf4, Kg5 und Kh6, dann Dg7#.',
+          pro: 'Schwarz kann den Marsch nicht verhindern, weil alle Figuren den Königsflügel verteidigen müssen.',
+        },
+      },
+      {
+        ply: 62,
+        prompt: { short: 'Weiter mit dem König!' },
+        explain: { short: '32.Kg3 – Schritt für Schritt Richtung h6.' },
+      },
+      {
+        ply: 64,
+        prompt: { short: 'Der König läuft weiter.' },
+        explain: { short: '33.Kf4 – die schwarzen Figuren stehen zu weit weg, um Schach zu geben.' },
+      },
+      {
+        ply: 66,
+        prompt: { short: 'Der letzte Schritt vor dem Ziel.' },
+        explain: { short: '34.Kg5 – es droht Kh6 und Dg7#. Timman gab auf.' },
+      },
+    ],
+    outro: { short: 'Im Mittelspiel ist der König meist ein Ziel – aber wenn der Gegner gelähmt ist, kann er zum entscheidenden Angreifer werden.' },
+  },
 ];
