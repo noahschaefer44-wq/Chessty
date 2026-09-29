@@ -36,6 +36,11 @@ Falsche Züge in Lektionen, Eröffnungstraining, Puzzles, Meisterpartien, Prüfu
 ## Community (freiwillig, ohne E-Mail)
 Konto mit Name + geheimem Sync-Code, Sync zwischen Geräten, Freunde per Code, Wochenliga (Bronze bis Diamant), Tages-Rangliste. Backend: Supabase; alle Zugriffe über geprüfte Datenbankfunktionen, Tabellen sind direkt nicht erreichbar.
 
+## Admin-/Testmodus
+Geheimes Test-Panel: **Strg+Umschalt+Alt+A**, Konami-Code (↑↑↓↓←→←→BA) oder **7× schnell aufs Logo tippen**, danach Passphrase (nur als SHA-256-Hash in `src/lib/admin.ts`).
+Enthält illegale Züge gegen Bots, Sofort-Sieg/-Niederlage, Hellsehen, Uhr einfrieren, Lösungspfeile, unendlich Herzen, Fortschritts-Cheats, Zeitreise, Optik-Effekte (Kopfstand, Spiegel, Negativ, Riesen- und Wackelfiguren, Disco, 3D, Terminal, Zeitlupe, Konfetti) und Debug-Werkzeuge.
+Sobald ein Test-Feature benutzt wird, sichert die App den echten Fortschritt und sperrt alle Server-Schreibzugriffe (Sync, Liga, Tagespuzzle, Online-Partien). „Testmodus beenden“ stellt den echten Fortschritt wieder her. Alles wirkt nur im eigenen Browser.
+
 ## Entwicklung
 ```bash
 npm install

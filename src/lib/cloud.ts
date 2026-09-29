@@ -1,3 +1,4 @@
+import { serverBlocked } from './admin';
 // Kostenloser Server (Supabase): Konto ohne E-Mail, Sync, Freunde, Liga, Tagespuzzle, Online-Partien.
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { getProgress, update, isoWeek, type Progress } from './progress';
@@ -42,7 +43,11 @@ function setAccount(a: Account | null) {
   window.dispatchEvent(new CustomEvent('chessty-account'));
 }
 
+// Im Testmodus (Admin-Panel benutzt) werden keine Ergebnisse an den Server geschickt
+const BLOCKED_IN_TEST = ['chessty_push', 'chessty_daily_submit', 'chessty_game_send', 'chessty_add_friend', 'chessty_register'];
+
 async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  if (serverBlocked() && BLOCKED_IN_TEST.includes(fn)) throw new Error('Testmodus aktiv – Server-Funktionen sind gesperrt. Beende den Testmodus im Admin-Panel.');
   const c = await sb();
   const { data, error } = await c.rpc(fn, args);
   if (error) throw new Error(error.message);

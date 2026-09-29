@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAdmin, registerAdminActions } from '../lib/admin';
 import VariantBoard, { PieceSvg } from './VariantBoard';
 import {
   newGame, legalMoves, makeMove, outcome, duckSquares, inCheck, kingSq, moveText, posKey, colorOf, PIECE_NAMES,
@@ -29,6 +30,7 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
   const [over, setOver] = useState<Outcome | null>(null);
   const [hint, setHint] = useState<Move | null>(null);
   const game = useRef(0);
+  const [reveal, setReveal] = useState(false);
 
   const moves = useMemo(() => (over ? [] : legalMoves(pos, rules)), [pos, rules, over]);
 
@@ -110,6 +112,19 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
 
   useEffect(() => () => cancelBot(), []);
 
+  // Admin-Testmodus
+  const adm = useAdmin();
+  useEffect(() => {
+    if (!adm.unlocked || level === null) return;
+    return registerAdminActions('variant', [
+      { label: 'Sofort gewinnen', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human, reason: 'Sieg (Testmodus)' }); } },
+      { label: 'Sofort verlieren', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human === 'w' ? 'b' : 'w', reason: 'Niederlage (Testmodus)' }); } },
+      { label: 'Remis', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: 'draw', reason: 'Remis (Testmodus)' }); } },
+      { label: 'Nebel lüften / Brett aufdecken', run: () => setReveal(true) },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adm.unlocked, level, human, pos]);
+
   function onSquare(s: number) {
     if (over || level === null || pos.turn !== human || thinking) return;
     if (duckFor) {
@@ -162,12 +177,12 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
 
   // Nebel: nur Felder sichtbar, die eigene Figuren erreichen können
   const hidden = useMemo(() => {
-    if (!rules.fog || over) return undefined;
+    if (!rules.fog || over || reveal) return undefined;
     const vis = new Set<number>();
     pos.b.forEach((p, s) => p && colorOf(p) === human && vis.add(s));
     for (const m of legalMoves({ ...pos, turn: human }, { ...rules, forcedCapture: false })) if (m.from >= 0) vis.add(m.to);
     return new Set(Array.from({ length: 64 }, (_, s) => s).filter((s) => !vis.has(s)));
-  }, [pos, rules, human, over]);
+  }, [pos, rules, human, over, reveal]);
 
   if (level === null) {
     return (

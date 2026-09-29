@@ -43,6 +43,7 @@ const Online = lazy(() => import('./pages/Online'));
 const Variants = lazy(() => import('./pages/Variants'));
 const Legal = lazy(() => import('./pages/Legal'));
 import ErrorBoundary from './components/ErrorBoundary';
+import AdminPanel from './components/AdminPanel';
 
 const NAV = [
   { path: '', label: 'Lernpfad', ico: '◆' },
@@ -154,6 +155,13 @@ export default function App() {
   const { level } = levelFromXp(p.xp);
   const [online, setOnline] = useState(navigator.onLine);
   const [updateReady, setUpdateReady] = useState(false);
+  const [crash, setCrash] = useState(false);
+  useEffect(() => {
+    const on = () => setCrash(true);
+    window.addEventListener('chessty-admin-crash', on);
+    return () => window.removeEventListener('chessty-admin-crash', on);
+  }, []);
+  useEffect(() => setCrash(false), [route.join('/')]); // eslint-disable-line react-hooks/exhaustive-deps
   const [toasts, setToasts] = useState<{ key: number; icon: string; title: string; text: string }[]>([]);
   useEffect(() => {
     const push = (t: { icon: string; title: string; text: string }) => {
@@ -232,7 +240,7 @@ export default function App() {
       </header>
       <main className="main" key={route.join('/')}>
         <ErrorBoundary resetKey={route.join('/')}>
-          <Suspense fallback={<p className="mono"><span className="spinner" /> Lade …</p>}>{page(route)}</Suspense>
+          <Suspense fallback={<p className="mono"><span className="spinner" /> Lade …</p>}>{crash ? <Crash /> : page(route)}</Suspense>
         </ErrorBoundary>
       </main>
       <footer className="footer">
@@ -246,6 +254,7 @@ export default function App() {
           <a href="#/rechtliches/lizenzen">Lizenzen</a>
         </nav>
       </footer>
+      <AdminPanel />
       <div className="toast-stack" aria-live="polite">
         {toasts.map((t) => (
           <div className="achv" key={t.key}>
@@ -274,4 +283,9 @@ export default function App() {
       </nav>
     </div>
   );
+}
+
+/** Absichtlicher Fehler zum Testen der Fehlerseite (Admin-Panel) */
+function Crash(): never {
+  throw new Error('Test-Absturz aus dem Admin-Panel');
 }

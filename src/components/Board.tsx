@@ -6,6 +6,8 @@ import type { Key } from 'chessground/types';
 import { Chess } from 'chess.js';
 import { dests, isPromotion, turnColor, type Color } from '../lib/chess';
 import { useProgress } from '../lib/progress';
+import { useAdmin, reportFen } from '../lib/admin';
+import { confetti } from '../lib/confetti';
 
 export interface BoardProps {
   fen: string;
@@ -18,6 +20,8 @@ export interface BoardProps {
   /** Pfeil-Kurzschreibweise, z. B. "e2e4", "!d1h5", "?g1f3", "e4" (Kreis) */
   arrows?: string[];
   className?: string;
+  /** Admin-Testmodus: illegale Züge auf diesem Brett erlauben (nur Bot-Partien) */
+  allowFree?: boolean;
 }
 
 // Eigene Pfeile (Rechtsklick/Ziehen) werden pro Stellung gespeichert
@@ -74,7 +78,7 @@ export function parseArrows(list: string[] = []): DrawShape[] {
   });
 }
 
-export default function Board({ fen, orientation = 'white', movable, onMove, lastMove, shapes, arrows, className }: BoardProps) {
+export default function Board({ fen, orientation = 'white', movable, onMove, lastMove, shapes, arrows, className, allowFree }: BoardProps) {
   const el = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
   const onMoveRef = useRef(onMove);
@@ -90,18 +94,23 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
   const [promo, setPromo] = useState<{ from: string; to: string; color: Color } | null>(null);
   const { showCoords, animSpeed, boardTheme } = useProgress();
   const [announce, setAnnounce] = useState('');
+  const adm = useAdmin();
+  const on = (f: keyof typeof adm.flags) => adm.unlocked && !!adm.flags[f];
+  const free = !!allowFree && on('freeMoves');
+  const squareNames = on('squareNames');
 
   useEffect(() => {
     if (!el.current) return;
     api.current = Chessground(el.current, {
-      coordinates: showCoords,
+      coordinates: showCoords || squareNames,
+      coordinatesOnSquares: squareNames,
       animation: { enabled: animSpeed > 0, duration: animSpeed },
       highlight: { lastMove: true, check: true },
       drawable: { enabled: true, brushes, defaultSnapToValidMove: true, onChange: (sh) => saveArrows(fenRef.current, sh) },
       premovable: { enabled: false },
     });
     return () => api.current?.destroy();
-  }, [showCoords, animSpeed]);
+  }, [showCoords, animSpeed, squareNames]);
 
   useEffect(() => {
     const cg = api.current;
@@ -114,6 +123,25 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
     }
     const turn = chess ? turnColor(chess) : 'white';
     const canMove = !!chess && !!movable && (movable === 'both' || movable === turn);
+    reportFen(fen);
+    // Admin-Freimodus: eigene Figuren dürfen überall hin (auch wenn chess.js die Stellung nicht versteht)
+    const fenTurn: Color = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+    if (free && movable) {
+      cg.set({
+        fen,
+        orientation,
+        turnColor: fenTurn,
+        lastMove: lastMove as Key[] | undefined,
+        movable: {
+          free: true,
+          color: movable === 'both' ? 'both' : movable === fenTurn ? fenTurn : undefined,
+          dests: new Map(),
+          showDests: false,
+          events: { after: (orig, dest) => { onMoveRef.current?.(orig + dest); resync(); } },
+        },
+      });
+      return;
+    }
     cg.setShapes(loadArrows(fen));
     cg.set({
       fen,
@@ -139,7 +167,7 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
       },
     });
     if (lastMove) setAnnounce(`Zug von ${lastMove[0]} nach ${lastMove[1]}${chess?.inCheck() ? ', Schach' : ''}.`);
-  }, [fen, orientation, movable, lastMove?.[0], lastMove?.[1], showCoords, animSpeed]);
+  }, [fen, orientation, movable, lastMove?.[0], lastMove?.[1], showCoords, animSpeed, free, squareNames]);
 
   useEffect(() => {
     api.current?.setAutoShapes([...(shapes ?? []), ...parseArrows(arrows)]);
@@ -157,7 +185,10 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
       className={`board-wrap theme-${boardTheme} ` + (className ?? '')}
       // Chessground merkt sich die Brettposition; verschiebt sich das Layout (z. B. Uhr oder Hinweis darüber),
       // stimmen Klicks sonst nicht mehr. Vor jeder Berührung deshalb neu vermessen.
-      onPointerDownCapture={() => api.current?.state.dom.bounds.clear()}
+      onPointerDownCapture={() => {
+        api.current?.state.dom.bounds.clear();
+        if (on('confetti')) confetti();
+      }}
     >
       <div ref={el} className="cg-board-el" />
       <div className="sr-only" aria-live="polite">{announce}</div>

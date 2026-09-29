@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flag, useAdmin, registerAdminActions } from '../lib/admin';
+import { forceMove } from '../lib/forceMove';
 import { Chess, type Move } from 'chess.js';
 import Board from '../components/Board';
 import { EvalBar } from '../components/Widgets';
@@ -115,16 +117,21 @@ export default function Play({ startFen }: { startFen?: string }) {
   const clock = CLOCKS.find((c) => c.id === clockId)!;
   const [times, setTimes] = useState({ w: 0, b: 0 });
   const tickRef = useRef(Date.now());
+  // Admin-Testmodus: nach illegalen Zügen startet die Partie intern von einer neuen Stellung
+  const [base, setBase] = useState<string | undefined>(initialFen);
+  const [prefix, setPrefix] = useState<string[]>([]);
+  const adm = useAdmin();
+  const clair = adm.unlocked && !!adm.flags.clairvoyance;
 
   const game = useMemo(() => {
-    const c = new Chess(initialFen);
+    const c = new Chess(base);
     for (const m of history) c.move(m);
     return c;
-  }, [history, initialFen]);
+  }, [history, base]);
   const fen = game.fen();
   const lastMv = game.history({ verbose: true }).at(-1);
   const myTurn = (game.turn() === 'w' ? 'white' : 'black') === color;
-  const { lines, loading } = useEngine(fen, helper && !!bot && myTurn && !result && !judging, 14);
+  const { lines, loading } = useEngine(fen, (helper || clair) && !!bot && myTurn && !result && !judging, 14);
 
   useEffect(() => {
     if (!initialFen) openingName(history.slice(0, 16)).then(setName);
@@ -140,6 +147,7 @@ export default function Play({ startFen }: { startFen?: string }) {
       tickRef.current = now;
       setTimes((t) => {
         const side = game.turn();
+        if (flag('freezeClock') && (side === 'w' ? 'white' : 'black') === color) return t;
         const nt = { ...t, [side]: t[side] - d };
         if (nt[side] <= 0) {
           const iLost = (side === 'w' ? 'white' : 'black') === color;
@@ -155,6 +163,8 @@ export default function Play({ startFen }: { startFen?: string }) {
   function startGame(b: Bot) {
     setBot(b);
     setHistory([]);
+    setBase(initialFen);
+    setPrefix([]);
     setResult('');
     setFeedback(null);
     setTimes({ w: clock.base * 1000, b: clock.base * 1000 });
@@ -197,7 +207,12 @@ export default function Play({ startFen }: { startFen?: string }) {
     let alive = true;
     setThinking(true);
     (async () => {
-      const u = await botMove(bot, fen, history, !initialFen);
+      let u: string;
+      if (flag('weakBot')) {
+        const ms = new Chess(fen).moves({ verbose: true });
+        const pick = ms[Math.floor(Math.random() * ms.length)];
+        u = pick ? pick.from + pick.to + (pick.promotion ?? '') : '';
+      } else u = await botMove(bot, fen, history, !initialFen && !prefix.length);
       await new Promise((r) => setTimeout(r, 250));
       if (!alive) return;
       const c = new Chess(fen);
@@ -219,12 +234,76 @@ export default function Play({ startFen }: { startFen?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history]);
 
+  /** Illegalen Zug ausführen (nur Admin-Testmodus) */
+  function playIllegal(u: string) {
+    const f = forceMove(fen, u);
+    if (!f) return;
+    sound.capture();
+    if (f.capturedKing) {
+      setPrefix([...prefix, ...history, f.label]);
+      setHistory([]);
+      finishGame('Du hast den König geschlagen – Sieg (Testmodus).', 'w');
+      return;
+    }
+    if (!f.valid) {
+      setFeedback({ q: 'Testmodus', text: 'Diese Stellung kann die Engine nicht spielen (z. B. König im Schach des Ziehenden). Probiere einen anderen Zug.' });
+      return;
+    }
+    setPrefix([...prefix, ...history, f.label]);
+    setHistory([]);
+    // Eigener König steht danach im Schach? Dann schlägt ihn der Bot.
+    const after = new Chess(f.fen);
+    const mine = color === 'white' ? 'w' : 'b';
+    const k = after.board().flat().find((x) => x && x.type === 'k' && x.color === mine);
+    if (k && after.isAttacked(k.square, mine === 'w' ? 'b' : 'w')) {
+      finishGame(`${bot?.name} schlägt deinen König – Niederlage (Testmodus).`, 'l');
+      return;
+    }
+    setBase(f.fen);
+    setFeedback(null);
+  }
+
+  // Aktionen im Admin-Panel für diese Partie
+  useEffect(() => {
+    if (!bot || !adm.unlocked) return;
+    return registerAdminActions('play', [
+      { label: 'Sofort gewinnen', run: () => finishGame('Sieg (Testmodus).', 'w') },
+      { label: 'Sofort verlieren', run: () => finishGame('Niederlage (Testmodus).', 'l') },
+      { label: 'Remis', run: () => finishGame('Remis (Testmodus).', 'd') },
+      { label: 'Zug aussetzen (Seite wechseln)', run: () => {
+        const parts = fen.split(' ');
+        parts[1] = parts[1] === 'w' ? 'b' : 'w';
+        parts[3] = '-';
+        const nf = parts.join(' ');
+        try { new Chess(nf); } catch { return; }
+        setPrefix([...prefix, ...history, '(aussetzen)']);
+        setHistory([]);
+        setBase(nf);
+      } },
+      { label: 'Gegnerische Dame entfernen', run: () => {
+        const c = new Chess(fen);
+        const q = color === 'white' ? 'b' : 'w';
+        const sq = c.board().flat().find((x) => x && x.type === 'q' && x.color === q);
+        if (!sq) return;
+        c.remove(sq.square);
+        setPrefix([...prefix, ...history, `(Dame ${sq.square} weg)`]);
+        setHistory([]);
+        setBase(c.fen());
+      } },
+      { label: 'Stellung → Brett-Editor', run: () => { location.hash = '#/editor/' + encodeURIComponent(fen); } },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bot, adm.unlocked, fen, result, history, prefix]);
+
   async function onMove(u: string) {
     if (!myTurn || result || judging) return;
     const before = fen;
     const c = new Chess(fen);
     const m = tryMove(c, u);
-    if (!m) return;
+    if (!m) {
+      if (flag('freeMoves')) playIllegal(u);
+      return;
+    }
     m.captured ? sound.capture() : sound.move();
     addInc(game.turn());
     setHistory([...history, m.san]);
@@ -313,8 +392,8 @@ export default function Play({ startFen }: { startFen?: string }) {
       <div className="trainer">
         <div className="board-col">
           {clockBox(botSide, bot.name)}
-          <Board fen={fen} orientation={color} movable={!result && myTurn && !judging ? color : undefined} onMove={onMove}
-            lastMove={lastMv ? [lastMv.from, lastMv.to] : undefined} arrows={helper && best && myTurn ? [best.slice(0, 4)] : []} />
+          <Board fen={fen} orientation={color} movable={!result && myTurn && !judging ? color : undefined} onMove={onMove} allowFree
+            lastMove={lastMv ? [lastMv.from, lastMv.to] : undefined} arrows={(helper || clair) && best && myTurn ? [best.slice(0, 4)] : []} />
           {clockBox(mySide, 'Du')}
           {helper && <EvalBar line={lines[0]} loading={loading} />}
         </div>
@@ -341,7 +420,7 @@ export default function Play({ startFen }: { startFen?: string }) {
           <div className="panel">
             <div className="panel-head"><b>Züge</b></div>
             <div className="movelist">
-              {history.map((s, i) => <span key={i}>{i % 2 === 0 && <span className="n">{i / 2 + 1}.</span>} {sanDe(s)}</span>)}
+              {[...prefix, ...history].map((s, i) => <span key={i}>{i % 2 === 0 && <span className="n">{i / 2 + 1}.</span>} {sanDe(s)}</span>)}
             </div>
           </div>
           <div className="row">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAdmin, registerAdminActions } from '../lib/admin';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import Explain from '../components/Explain';
@@ -160,6 +161,19 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
     }, 450);
   }
 
+  // Admin-Testmodus
+  const adm = useAdmin();
+  useEffect(() => {
+    if (!adm.unlocked || !pz) return;
+    return registerAdminActions('puzzle', [
+      { label: 'Puzzle als gelöst werten', run: () => { if (state !== 'playing') return; wm.clear(); if (!failedThis.current) finishPuzzle(true); setState('solved'); } },
+      { label: 'Puzzle als falsch werten', run: () => { if (state !== 'playing') return; wm.clear(); if (!failedThis.current) { failedThis.current = true; finishPuzzle(false); } setState('failed'); } },
+      { label: 'Runde sofort beenden', run: () => setState('done') },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adm.unlocked, pz, state, ply]);
+  const cheatArrow = adm.unlocked && adm.flags.solutionArrows && state === 'playing' && pz?.moves[ply] ? [pz.moves[ply].slice(0, 4)] : [];
+
   function showSolution() {
     wm.clear();
     if (!failedThis.current) {
@@ -226,7 +240,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
         <div className="board-col">
           <Board fen={wm.view?.fen ?? fen} orientation={orientation} movable={wm.wrong ? undefined : movable} onMove={onMove}
             lastMove={wm.view ? wm.view.last : last}
-            arrows={wm.view ? wm.view.arrows : explore && lines[0] ? [lines[0].pv[0].slice(0, 4)] : arrows} className={flash} />
+            arrows={wm.view ? wm.view.arrows : explore && lines[0] ? [lines[0].pv[0].slice(0, 4)] : [...arrows, ...cheatArrow]} className={flash} />
           {explore && <EvalBar line={lines[0]} loading={loading} />}
         </div>
         <aside className="side">

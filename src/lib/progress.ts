@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { load, save } from './storage';
 import { BADGES, questsFor, type DayStats } from './game';
+import { flag } from './admin';
 
 export interface ReviewCard {
   id: string;
@@ -122,7 +123,7 @@ function rollDay(p: Progress): Progress {
 const HEART_MS = 3 * 3600 * 1000;
 /** Herzen regenerieren sich: eins alle 3 Stunden. */
 export function heartsNow(p: Progress): number {
-  if (p.hearts >= 5) return 5;
+  if (p.hearts >= 5 || flag('infiniteHearts')) return 5;
   return Math.min(5, p.hearts + Math.floor((Date.now() - p.heartsAt) / HEART_MS));
 }
 
@@ -295,6 +296,7 @@ export async function importProgress(file: File): Promise<boolean> {
 
 /** Herz verlieren (nur wenn Herzen aktiviert sind). */
 export function loseHeart(): void {
+  if (flag('infiniteHearts')) return;
   update((p) => (p.heartsEnabled ? { ...p, hearts: Math.max(0, heartsNow(p) - 1), heartsAt: Date.now() } : p));
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAdmin, registerAdminActions } from '../lib/admin';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import Explain, { Rich } from '../components/Explain';
@@ -91,6 +92,27 @@ export default function LessonPlayer({ id }: { id: string }) {
     Enter: () => (phase === 'show' || phase === 'solved') && !(phase === 'show' && step?.kind === 'move') && next(),
     ArrowLeft: () => idx > 0 && setIdx(idx - 1),
   });
+
+  // Admin-Testmodus
+  const adm = useAdmin();
+  useEffect(() => {
+    if (!adm.unlocked || !lesson) return;
+    return registerAdminActions('lesson', [
+      { label: 'Lektion sofort abschließen (3 Sterne)', run: () => { completeLesson(lesson.id, 3, 25); setFinished(true); confetti(); } },
+      { label: 'Nächster Schritt', run: () => setIdx((i) => Math.min(lesson.steps.length - 1, i + 1)) },
+      { label: 'Aufgabe als gelöst werten', run: () => { if (step?.kind === 'move' && phase === 'task') { const c = new Chess(pos.shown); const m = c.move((step as MoveStep).solution[0]); setWrong(null); solved(c, m, true); } } },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adm.unlocked, lesson, idx, phase]);
+  const cheat = (() => {
+    if (!adm.unlocked || !adm.flags.solutionArrows || step?.kind !== 'move' || phase !== 'task' || !pos) return [];
+    try {
+      const m = new Chess(pos.shown).move((step as MoveStep).solution[0]);
+      return [m.from + m.to];
+    } catch {
+      return [];
+    }
+  })();
 
   if (prog.heartsEnabled && heartsNow(prog) === 0 && !finished) return <NoHearts />;
 
@@ -289,7 +311,7 @@ export default function LessonPlayer({ id }: { id: string }) {
     ? lines[0]?.pv[0] ? [lines[0].pv[0].slice(0, 4)] : []
     : phase === 'solved'
       ? extraArrows
-      : [...(phase === 'show' || step.kind === 'info' ? step.arrows ?? [] : step.arrows ?? []), ...extraArrows];
+      : [...(phase === 'show' || step.kind === 'info' ? step.arrows ?? [] : step.arrows ?? []), ...extraArrows, ...(wrong ? [] : cheat)];
 
   return (
     <>
