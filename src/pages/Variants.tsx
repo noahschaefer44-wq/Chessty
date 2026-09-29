@@ -213,7 +213,7 @@ function Builder({ initial }: { initial: Design | null }) {
           <div className="panel">
             <div className="panel-head"><b>1 · Idee beschreiben</b><span className="spacer" /><span className="mono muted" style={{ fontSize: 12 }}>{ai === 'available' ? 'Browser-KI aktiv' : 'Regel-Assistent'}</span></div>
             <div className="panel-body">
-              <textarea className="input" rows={4} value={text} onChange={(e) => setText(e.target.value)}
+              <textarea className="input" aria-label="Deine Varianten-Idee" rows={4} value={text} onChange={(e) => setText(e.target.value)}
                 placeholder="z. B.: Wer zuerst 5 Schachgebote gibt, gewinnt. Türme werden zu Kanzlern. Keine Rochade." style={{ width: '100%', resize: 'vertical' }} />
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="btn primary small" onClick={convert} disabled={busy || !text.trim()}>{busy ? 'Denke nach …' : 'Umwandeln'}</button>

@@ -187,7 +187,7 @@ function OnlineGame({ code, myName }: { code: string; myName: string }) {
           <div className="panel">
             <div className="panel-body stack">
               <p>Schicke diesen Link an deinen Gegner:</p>
-              <input type="text" readOnly value={link} onFocus={(e) => e.target.select()} />
+              <input type="text" aria-label="Einladungslink" readOnly value={link} onFocus={(e) => e.target.select()} />
               <div className="row">
                 <button className="btn small" onClick={() => navigator.clipboard?.writeText(link)}>Link kopieren</button>
                 {'share' in navigator && <button className="btn small" onClick={() => navigator.share({ title: 'Chessty – Partie', url: link }).catch(() => undefined)}>Teilen</button>}

@@ -119,7 +119,7 @@ export default function Editor({ initial }: { initial?: string }) {
             <button className="btn small" onClick={() => setFlip((f) => !f)}>Drehen</button>
           </div>
           <input type="text" value={fullFen} readOnly onFocus={(e) => e.target.select()} aria-label="FEN" />
-          <input type="text" placeholder="FEN einfügen und Enter drücken" onKeyDown={(e) => {
+          <input type="text" aria-label="FEN einfügen" placeholder="FEN einfügen und Enter drücken" onKeyDown={(e) => {
             if (e.key !== 'Enter') return;
             const v = (e.target as HTMLInputElement).value.trim();
             try { new Chess(v); load(v.split(' ')[0]); setTurn(v.split(' ')[1] === 'b' ? 'b' : 'w'); } catch { alert('Ungültige FEN'); }

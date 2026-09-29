@@ -41,6 +41,7 @@ const Community = lazy(() => import('./pages/Community'));
 const DailyPuzzle = lazy(() => import('./pages/DailyPuzzle'));
 const Online = lazy(() => import('./pages/Online'));
 const Variants = lazy(() => import('./pages/Variants'));
+const Legal = lazy(() => import('./pages/Legal'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 const NAV = [
@@ -63,6 +64,7 @@ const MORE = [
   { path: 'tagespuzzle', label: 'Tagespuzzle' },
   { path: 'einstufung', label: 'Einstufungstest' },
   { path: 'profil', label: 'Profil & Einstellungen' },
+  { path: 'rechtliches', label: 'Impressum & Datenschutz' },
 ];
 const MOBILE = ['', 'taktik', 'training', 'spielen', 'mehr'];
 
@@ -105,6 +107,8 @@ function page(r: string[]) {
         case 'raten': return <GuessMove />;
         default: return <Training />;
       }
+    case 'rechtliches':
+      return <Legal page={r[1]} />;
     case 'varianten':
       return <Variants sub={r[1]} arg={r[2]} key={r.join('/')} />;
     case 'wissen':
@@ -233,6 +237,14 @@ export default function App() {
       </main>
       <footer className="footer">
         Chessty · kostenlos & Open Source (GPL-3) · Engine: Stockfish 19 · Puzzles & Eröffnungsnamen: Lichess (CC0)
+        <nav className="footer-links" aria-label="Rechtliches">
+          <a href="#/rechtliches/impressum">Impressum</a>
+          <a href="#/rechtliches/datenschutz">Datenschutz</a>
+          <a href="#/rechtliches/nutzung">Nutzungsbedingungen</a>
+          <a href="#/rechtliches/cookies">Cookies</a>
+          <a href="#/rechtliches/barrierefreiheit">Barrierefreiheit</a>
+          <a href="#/rechtliches/lizenzen">Lizenzen</a>
+        </nav>
       </footer>
       <div className="toast-stack" aria-live="polite">
         {toasts.map((t) => (

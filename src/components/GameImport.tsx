@@ -76,9 +76,13 @@ export default function GameImport({ onPick }: { onPick: (g: ImportedGame) => vo
           <div className="seg">
             {(['Lichess', 'Chess.com'] as const).map((s) => <button key={s} className={site === s ? 'on' : ''} onClick={() => setSite(s)}>{s}</button>)}
           </div>
-          <input type="text" placeholder="Benutzername" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load()} style={{ flex: 1, minWidth: 160 }} />
+          <input type="text" aria-label="Benutzername auf Lichess oder Chess.com" placeholder="Benutzername" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load()} style={{ flex: 1, minWidth: 160 }} />
           <button className="btn primary" onClick={load} disabled={busy || !name.trim()}>{busy ? 'Lade …' : 'Laden'}</button>
         </div>
+        <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+          Dein Browser fragt die öffentlichen Partien direkt bei {site === 'Lichess' ? 'lichess.org' : 'chess.com'} ab
+          (dabei werden Name und IP-Adresse übertragen). <a href="#/rechtliches/datenschutz">Datenschutz</a>
+        </p>
         {err && <div className="feedback bad">{err}</div>}
         {games.length > 0 && (
           <div className="list" style={{ maxHeight: 320, overflow: 'auto' }}>

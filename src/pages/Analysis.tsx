@@ -160,7 +160,7 @@ export default function Analysis() {
           <div className="panel">
             <div className="panel-head"><b>…oder PGN einfügen</b></div>
             <div className="panel-body stack">
-              <textarea value={pgn} onChange={(e) => setPgn(e.target.value)} placeholder={SAMPLE} />
+              <textarea aria-label="PGN der Partie" value={pgn} onChange={(e) => setPgn(e.target.value)} placeholder={SAMPLE} />
               <div className="row">
                 <span>Ich hatte:</span>
                 <div className="seg">

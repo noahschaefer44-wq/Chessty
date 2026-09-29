@@ -68,7 +68,7 @@ export default function Glossary({ id }: { id?: string }) {
         <div className="kicker">Das Heft · {GLOSSARY.length} Begriffe</div>
         <h1>Fachbegriffe</h1>
         <p className="muted">Von „Abzug“ bis „Zugzwang“ – jeder Begriff kurz erklärt und mit einem Diagramm.</p>
-        <input type="search" placeholder="Begriff suchen …" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 480 }} />
+        <input type="search" aria-label="Begriff suchen" placeholder="Begriff suchen …" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 480 }} />
         <div className="seg" style={{ marginTop: 12 }}>
           <button className={!cat ? 'on' : ''} onClick={() => setCat('')}>Alle</button>
           {CATS.map((c) => (

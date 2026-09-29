@@ -5,6 +5,7 @@ import { useProgress, isoWeek } from '../lib/progress';
 
 function AccountSetup() {
   const [name, setName] = useState('');
+  const [consent, setConsent] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -25,16 +26,24 @@ function AccountSetup() {
         <h3>Konto anlegen</h3>
         <p className="muted" style={{ fontSize: 14 }}>Ohne E-Mail, ohne Passwort: Du wählst einen Namen und bekommst einen geheimen Sync-Code. Dein bisheriger Fortschritt wird übernommen.</p>
         <div className="row">
-          <input type="text" placeholder="Anzeigename (2–20 Zeichen)" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} style={{ flex: 1 }} />
-          <button className="btn primary" disabled={busy || name.trim().length < 2} onClick={() => run(() => register(name.trim()))}>Anlegen</button>
+          <input type="text" aria-label="Anzeigename" placeholder="Anzeigename (2–20 Zeichen)" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} style={{ flex: 1 }} />
+          <button className="btn primary" disabled={busy || name.trim().length < 2 || !consent} onClick={() => run(() => register(name.trim()))}>Anlegen</button>
         </div>
+        <label className="toggle-row" style={{ marginTop: 8, fontSize: 13 }}>
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+          <span>
+            Ich willige ein, dass Anzeigename und Spielstände auf dem Chessty-Server (EU) gespeichert werden und der Name in Ranglisten
+            sichtbar ist. Details: <a href="#/rechtliches/datenschutz">Datenschutz</a>. Widerruf jederzeit durch Löschen des Kontos.
+            Unter 16 nur mit Zustimmung der Eltern.
+          </span>
+        </label>
       </div>
       <div className="card flat">
         <div className="kicker">Zweites Gerät</div>
         <h3>Mit Sync-Code verbinden</h3>
         <p className="muted" style={{ fontSize: 14 }}>Den Code findest du auf deinem anderen Gerät unter „Community“. Der Fortschritt von dort wird hierher geladen.</p>
         <div className="row">
-          <input type="text" placeholder="Sync-Code" value={code} onChange={(e) => setCode(e.target.value)} style={{ flex: 1 }} />
+          <input type="text" aria-label="Sync-Code" placeholder="Sync-Code" value={code} onChange={(e) => setCode(e.target.value)} style={{ flex: 1 }} />
           <button className="btn" disabled={busy || !code.includes('.')} onClick={() => run(() => connect(code, false))}>Verbinden</button>
         </div>
       </div>
@@ -119,7 +128,7 @@ export default function Community() {
               <div className="panel-head"><b>Freunde</b></div>
               <div className="panel-body stack">
                 <div className="row">
-                  <input type="text" placeholder="Freundescode (6 Zeichen)" value={fcode} onChange={(e) => setFcode(e.target.value.toUpperCase())} maxLength={6} style={{ flex: 1 }} />
+                  <input type="text" aria-label="Freundescode" placeholder="Freundescode (6 Zeichen)" value={fcode} onChange={(e) => setFcode(e.target.value.toUpperCase())} maxLength={6} style={{ flex: 1 }} />
                   <button className="btn primary" disabled={fcode.length !== 6} onClick={async () => {
                     try {
                       const n = await addFriend(fcode);
@@ -160,7 +169,7 @@ export default function Community() {
                 <div>
                   <div className="kicker">Geheimer Sync-Code – nicht teilen!</div>
                   {showCode ? (
-                    <input type="text" readOnly value={syncCode(a)} onFocus={(e) => e.target.select()} />
+                    <input type="text" aria-label="Dein geheimer Sync-Code" readOnly value={syncCode(a)} onFocus={(e) => e.target.select()} />
                   ) : (
                     <button className="btn small" onClick={() => setShowCode(true)}>Anzeigen</button>
                   )}

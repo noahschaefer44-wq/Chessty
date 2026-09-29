@@ -1,5 +1,5 @@
 import { PIECE_IMG } from '../components/pieceImages';
-import { fileOf, rankOf, type Pos } from './engine';
+import { fileOf, rankOf, sqName, PIECE_NAMES, type Pos } from './engine';
 
 const BASE: Record<string, string> = { a: 'q', c: 'r', h: 'b' };
 
@@ -114,7 +114,13 @@ export default function VariantBoard({
       {onSquare &&
         cells.map((s) => {
           const { x, y } = xy(s);
-          return <rect key={'k' + s} className="sq-hit" x={x} y={y} width="1" height="1" fill="transparent" onClick={() => onSquare(s)} />;
+          const p = pos.b[s];
+          const label = `${sqName(s)}${p && !hidden?.has(s) ? ' ' + (p === p.toUpperCase() ? 'weißer ' : 'schwarzer ') + PIECE_NAMES[p.toLowerCase()] : ''}${targets.includes(s) ? ', Ziel' : ''}`;
+          return (
+            <rect key={'k' + s} className="sq-hit" x={x} y={y} width="1" height="1" fill="transparent" onClick={() => onSquare(s)}
+              tabIndex={0} role="button" aria-label={label}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSquare(s); } }} />
+          );
         })}
     </svg>
   );

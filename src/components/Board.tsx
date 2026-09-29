@@ -161,10 +161,11 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
     >
       <div ref={el} className="cg-board-el" />
       <div className="sr-only" aria-live="polite">{announce}</div>
+      {movable && onMove && <KeyboardMove fen={fen} movable={movable} onMove={onMove} />}
       {promo && (
         <div className="promo" role="dialog" aria-label="Umwandlung wählen">
           {['q', 'r', 'b', 'n'].map((r) => (
-            <button key={r} className="promo-piece" onClick={() => pick(r)} aria-label={r}>
+            <button key={r} className="promo-piece" onClick={() => pick(r)} aria-label={PROMO_NAMES[r]}>
               {(promo.color === 'white' ? { q: '♕', r: '♖', b: '♗', n: '♘' } : { q: '♛', r: '♜', b: '♝', n: '♞' })[r]}
             </button>
           ))}
@@ -173,6 +174,62 @@ export default function Board({ fen, orientation = 'white', movable, onMove, las
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+const PROMO_NAMES: Record<string, string> = { q: 'Dame', r: 'Turm', b: 'Läufer', n: 'Springer' };
+const DE_TO_EN: Record<string, string> = { S: 'N', L: 'B', T: 'R', D: 'Q', K: 'K' };
+
+/** Zugeingabe per Tastatur (Barrierefreiheit): unsichtbar, bis sie mit Tab fokussiert wird. */
+function KeyboardMove({ fen, movable, onMove }: { fen: string; movable: Color | 'both'; onMove: (uci: string) => void }) {
+  const [val, setVal] = useState('');
+  const [err, setErr] = useState('');
+  function submit() {
+    const raw = val.trim().replace(/\s+/g, '');
+    if (!raw) return;
+    let chess: Chess;
+    try {
+      chess = new Chess(fen);
+    } catch {
+      return;
+    }
+    if (movable !== 'both' && turnColor(chess) !== movable) {
+      setErr('Du bist gerade nicht am Zug.');
+      return;
+    }
+    const legalList = chess.moves({ verbose: true });
+    let uci = '';
+    if (/^[a-h][1-8][a-h][1-8][qrbnQRBNDTLS]?$/.test(raw)) {
+      const pr = raw[4] ? (DE_TO_EN[raw[4].toUpperCase()] ?? raw[4].toUpperCase()).toLowerCase() : '';
+      uci = raw.slice(0, 4) + pr;
+    } else {
+      // Deutsche Figurenbuchstaben (S, L, T, D) in englische SAN übersetzen
+      const san = raw.replace(/^[SLTDK]/, (c) => DE_TO_EN[c]).replace(/=([SLTD])/, (_, c) => '=' + DE_TO_EN[c]).replace(/0/g, 'O');
+      try {
+        const m = chess.move(san);
+        uci = m.from + m.to + (m.promotion ?? '');
+      } catch {
+        uci = '';
+      }
+    }
+    const legal = uci && legalList.some((m) => m.from + m.to + (m.promotion ?? '') === uci || (m.from + m.to === uci && !m.promotion));
+    if (!legal) {
+      setErr(`„${val}“ ist hier kein erlaubter Zug.`);
+      return;
+    }
+    setErr('');
+    setVal('');
+    onMove(uci);
+  }
+  return (
+    <div className="kbd-move">
+      <label>
+        Zug per Tastatur (z. B. e4, Sf3, O-O oder e2e4)
+        <input type="text" value={val} autoComplete="off" spellCheck={false} aria-invalid={!!err}
+          onChange={(e) => { setVal(e.target.value); setErr(''); }} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+      </label>
+      {err && <span role="alert">{err}</span>}
     </div>
   );
 }

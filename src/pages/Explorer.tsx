@@ -59,7 +59,7 @@ export default function Explorer() {
             <h2>{current[0] ? current[0].name : moves.length ? 'Abseits der Theorie' : 'Grundstellung'}</h2>
             {current[0] && <span className="tag solid">{current[0].eco}</span>}
           </div>
-          <input type="search" placeholder="Suche: Najdorf, Caro-Kann, B90 …" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" aria-label="Eröffnung suchen" placeholder="Suche: Najdorf, Caro-Kann, B90 …" value={q} onChange={(e) => setQ(e.target.value)} />
           {results.length > 0 && (
             <div className="list" style={{ maxHeight: 300, overflow: 'auto' }}>
               {results.map((r) => (

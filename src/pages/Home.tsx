@@ -171,7 +171,7 @@ export default function Home() {
         <a className="card" href="#/spielen">
           <div className="kicker">6 Bots</div>
           <h3>Gegen Bots spielen</h3>
-          <p className="muted">Vom Anfänger-Bot bis zum Großmeister – mit Tipps auf Wunsch.</p>
+          <p className="muted">Vom Anfänger-Bot bis zur vollen Stockfish-Stärke – mit Tipps auf Wunsch.</p>
         </a>
         <a className="card" href="#/analyse">
           <div className="kicker">PGN einfügen</div>

@@ -31,7 +31,7 @@ const BOTS: Bot[] = [
   { id: 'laeufer', name: 'Läufer Leo', elo: '~1200', desc: 'Solider Vereinsanfänger. Bestraft grobe Fehler.', skill: 4, depth: 4, random: 0.05, style: 'normal' },
   { id: 'turm', name: 'Turm Tara', elo: '~1600', desc: 'Starker Clubspieler mit gutem Taktikblick.', skill: 8, depth: 8, random: 0, style: 'normal' },
   { id: 'dame', name: 'Dame Doris', elo: '~2000', desc: 'Experte. Spielt positionell und taktisch sauber.', skill: 13, depth: 12, random: 0, style: 'normal' },
-  { id: 'koenig', name: 'König Karl', elo: '2500+', desc: 'Großmeister-Niveau. Viel Glück.', skill: 20, depth: 16, random: 0, style: 'normal' },
+  { id: 'koenig', name: 'König Karl', elo: '2500+', desc: 'Volle Engine-Stärke auf hoher Suchtiefe. Viel Glück.', skill: 20, depth: 16, random: 0, style: 'normal' },
   // Persönlichkeiten
   { id: 'anton', name: 'Angreifer Anton', elo: '~1500', desc: 'Liebt Schachs, Schläge und Opfer. Greift an, auch wenn es riskant ist – übe Verteidigung!', skill: 7, depth: 8, random: 0, style: 'attack' },
   { id: 'vera', name: 'Verteidigerin Vera', elo: '~1500', desc: 'Spielt vorsichtig und solide. Übe, eine gesicherte Stellung zu knacken.', skill: 7, depth: 8, random: 0, style: 'defend' },
@@ -267,7 +267,7 @@ export default function Play({ startFen }: { startFen?: string }) {
             const r = p.botResults[b.id];
             return (
               <button key={b.id} className={'card' + (i === 5 ? ' inverse' : '')} onClick={() => startGame(b)}>
-                <div className="kicker">Elo {b.elo}</div>
+                <div className="kicker">Elo ca. {b.elo.replace("~", "")} (geschätzt)</div>
                 <h3>{b.name}</h3>
                 <p className="muted" style={{ fontSize: 14 }}>{b.desc}</p>
                 {r && <span className="mono" style={{ fontSize: 12 }}>S {r.w} · R {r.d} · N {r.l}</span>}
@@ -281,7 +281,7 @@ export default function Play({ startFen }: { startFen?: string }) {
             const r = p.botResults[b.id];
             return (
               <button key={b.id} className="card" onClick={() => startGame(b)}>
-                <div className="kicker">Elo {b.elo}</div>
+                <div className="kicker">Elo ca. {b.elo.replace("~", "")} (geschätzt)</div>
                 <h3>{b.name}</h3>
                 <p className="muted" style={{ fontSize: 14 }}>{b.desc}</p>
                 {r && <span className="mono" style={{ fontSize: 12 }}>S {r.w} · R {r.d} · N {r.l}</span>}
@@ -320,7 +320,7 @@ export default function Play({ startFen }: { startFen?: string }) {
         </div>
         <aside className="side">
           <div>
-            <div className="kicker">Gegner · Elo {bot.elo}{clock.base ? ` · ${clock.label}` : ''}</div>
+            <div className="kicker">Gegner · Elo ca. {bot.elo.replace("~", "")}{clock.base ? ` · ${clock.label}` : ''}</div>
             <h2>{bot.name}</h2>
             <p className="mono" style={{ fontSize: 13, margin: 0 }}>
               {thinking ? <><span className="spinner" /> denkt …</> : judging ? <><span className="spinner" /> Kommentar …</> : result ? 'Partie beendet' : myTurn ? 'Du bist am Zug' : ''}
