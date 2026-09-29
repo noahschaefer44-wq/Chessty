@@ -4,6 +4,8 @@ import Board from '../components/Board';
 import { useProgress, gradeReview, removeReview, type ReviewCard } from '../lib/progress';
 import { tryMove, parseUci, sanDe, uciToSan } from '../lib/chess';
 import { sound } from '../lib/sound';
+import { useWrongMove } from '../lib/useWrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 /** Fehlerheft: Stellungen, die du falsch hattest, kommen per Spaced Repetition wieder. */
 export default function Review() {
@@ -14,8 +16,12 @@ export default function Review() {
   const [ply, setPly] = useState(0);
   const [state, setState] = useState<'play' | 'ok' | 'bad'>('play');
   const [arrows, setArrows] = useState<string[]>([]);
+  const wm = useWrongMove();
+  const [retried, setRetried] = useState(false);
 
   function start(c: ReviewCard) {
+    wm.clear();
+    setRetried(false);
     setCard(c);
     setState('play');
     setArrows([]);
@@ -37,6 +43,7 @@ export default function Review() {
       setState('bad');
       setArrows(['!' + u, card.solution[ply].slice(0, 4)]);
       gradeReview(card.id, false);
+      wm.check(fen, u, card.solution[ply]);
       return;
     }
     setFen(g.fen());
@@ -44,7 +51,7 @@ export default function Review() {
     if (n >= card.solution.length || g.isCheckmate()) {
       sound.good();
       setState('ok');
-      gradeReview(card.id, true);
+      if (!retried) gradeReview(card.id, true);
       return;
     }
     setTimeout(() => {
@@ -62,19 +69,23 @@ export default function Review() {
       <>
         <button className="back" style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0 }} onClick={() => setCard(null)}>← Fehlerheft</button>
         <div className="trainer">
-          <div className="board-col"><Board fen={fen} orientation={orientation} movable={state === 'play' ? color : undefined} onMove={onMove} arrows={arrows} /></div>
+          <div className="board-col"><Board fen={wm.view?.fen ?? fen} lastMove={wm.view?.last} orientation={orientation} movable={state === 'play' ? color : undefined} onMove={onMove} arrows={wm.view ? wm.view.arrows : arrows} /></div>
           <aside className="side">
             <div>
               <div className="kicker">{card.source} · Wiederholung</div>
               <h2>{card.title}</h2>
               <p className="mono">{orientation === 'white' ? 'Weiß' : 'Schwarz'} am Zug – finde den besten Zug.</p>
             </div>
-            {state === 'ok' && <div className="feedback good"><b>✓ Richtig!</b> Nächste Wiederholung in einigen Tagen.</div>}
+            {state === 'ok' && <div className="feedback good"><b>✓ Richtig!</b> {retried ? 'Im zweiten Anlauf – die Stellung kommt bald wieder.' : 'Nächste Wiederholung in einigen Tagen.'}</div>}
             {state === 'bad' && (
               <div className="feedback bad">
                 <b>Noch nicht sicher.</b> Richtig war {sanDe(uciToSan(fen, card.solution[ply]))}. Kommt bald wieder.
                 {card.note && <p style={{ marginTop: 8 }}>{card.note}</p>}
               </div>
+            )}
+            {state === 'bad' && wm.wrong && (
+              <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading} onReplay={wm.replay}
+                onRetry={() => { wm.clear(); setArrows([]); setRetried(true); setState('play'); }} />
             )}
             <div className="row">
               {state !== 'play' && nextDue && <button className="btn primary" onClick={() => start(nextDue)}>Nächste <span className="arrow">→</span></button>}

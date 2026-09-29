@@ -40,6 +40,7 @@ const Knowledge = lazy(() => import('./pages/Knowledge'));
 const Community = lazy(() => import('./pages/Community'));
 const DailyPuzzle = lazy(() => import('./pages/DailyPuzzle'));
 const Online = lazy(() => import('./pages/Online'));
+const Variants = lazy(() => import('./pages/Variants'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 const NAV = [
@@ -50,9 +51,10 @@ const NAV = [
   { path: 'meister', label: 'Meister', ico: '♛' },
   { path: 'training', label: 'Training', ico: '✚' },
   { path: 'spielen', label: 'Spielen', ico: '▶' },
-  { path: 'community', label: 'Community', ico: '◎' },
+  { path: 'varianten', label: 'Varianten', ico: '✦' },
 ];
 const MORE = [
+  { path: 'community', label: 'Community' },
   { path: 'analyse', label: 'Partieanalyse' },
   { path: 'fehlerheft', label: 'Fehlerheft' },
   { path: 'begriffe', label: 'Fachbegriffe' },
@@ -103,6 +105,8 @@ function page(r: string[]) {
         case 'raten': return <GuessMove />;
         default: return <Training />;
       }
+    case 'varianten':
+      return <Variants sub={r[1]} arg={r[2]} key={r.join('/')} />;
     case 'wissen':
       return <Knowledge id={r[1]} />;
     case 'community':

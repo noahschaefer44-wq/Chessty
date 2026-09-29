@@ -25,6 +25,14 @@ Kostenlose, interaktive Schach-Lern-App (PWA, offline nutzbar) – vom Einsteige
 - **Partieanalyse** mit Import von Lichess/Chess.com, Fehlermustern und Eröffnungs-Check
 - **Brett-Editor**
 
+## Varianten
+- Die **10 beliebtesten Varianten** von Lichess und Chess.com: Chess960, Crazyhouse, Schlagschach (Antichess), Atomschach, Drei-Schach, König der Hügel, Horde, Königsrennen, Nebelschach (Fog of War), Entenschach (Duck Chess)
+- Jede Variante gegen **5 Bots** (Küken bis Meister), eigene Regel-Engine und KI im Web Worker
+- **Varianten-Werkstatt**: Idee in eigenen Worten beschreiben → der Regel-Assistent (regelbasiert, optional mit der lokalen Browser-KI von Chrome) baut daraus spielbare Regeln, inkl. Märchenfiguren (Amazone, Kanzler, Erzbischof); speichern und per Link teilen
+
+## Fehler verstehen
+Falsche Züge in Lektionen, Eröffnungstraining, Puzzles, Meisterpartien, Prüfungen und im Fehlerheft werden nicht übersprungen: Stockfish erklärt, was der Gegner antwortet, zeigt die Widerlegung zum Nachspielen und erkennt, wenn dein Zug ebenfalls gut war.
+
 ## Community (freiwillig, ohne E-Mail)
 Konto mit Name + geheimem Sync-Code, Sync zwischen Geräten, Freunde per Code, Wochenliga (Bronze bis Diamant), Tages-Rangliste. Backend: Supabase; alle Zugriffe über geprüfte Datenbankfunktionen, Tabellen sind direkt nicht erreichbar.
 

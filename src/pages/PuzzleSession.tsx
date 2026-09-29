@@ -11,6 +11,8 @@ import NoHearts from '../components/NoHearts';
 import { parseUci, tryMove, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
+import { useWrongMove } from '../lib/useWrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 type State = 'loading' | 'playing' | 'solved' | 'failed' | 'done';
 const RUSH_TIME = 180;
@@ -31,6 +33,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
   const [explore, setExplore] = useState(false);
   const [time, setTime] = useState(RUSH_TIME);
   const failedThis = useRef(false);
+  const wm = useWrongMove();
 
   const pz = round[i];
   const orientation = pz ? (new Chess(pz.fen).turn() === 'w' ? 'black' : 'white') : 'white';
@@ -46,6 +49,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
   useEffect(() => {
     if (!pz) return;
     failedThis.current = false;
+    wm.clear();
     setExplore(false);
     setArrows([]);
     setPly(1);
@@ -106,7 +110,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
       }
       return;
     }
-    if (state !== 'playing') return;
+    if (state !== 'playing' || wm.wrong) return;
     const expected = pz.moves[ply];
     const c = new Chess(fen);
     const m = tryMove(c, u);
@@ -116,16 +120,23 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
     if (!ok) {
       sound.bad();
       blink('flash-bad');
-      setArrows(['!' + u]);
-      if (!failedThis.current) {
-        failedThis.current = true;
-        finishPuzzle(false);
-      }
       if (rush) {
+        setArrows(['!' + u]);
+        if (!failedThis.current) {
+          failedThis.current = true;
+          finishPuzzle(false);
+        }
         setState('failed');
         return;
       }
-      setTimeout(() => setArrows([]), 900);
+      // Erklären statt überspringen: Stellung nach dem Fehler + Widerlegung zeigen
+      wm.check(fen, u, expected).then((info) => {
+        if (info?.verdict === 'ok') return; // gleichwertiger Zug zählt nicht als Fehler
+        if (!failedThis.current) {
+          failedThis.current = true;
+          finishPuzzle(false);
+        }
+      });
       return;
     }
     setFen(c.fen());
@@ -150,6 +161,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
   }
 
   function showSolution() {
+    wm.clear();
     if (!failedThis.current) {
       failedThis.current = true;
       finishPuzzle(false);
@@ -212,8 +224,9 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
       <a className="back" href="#/taktik">← Taktik</a>
       <div className="trainer">
         <div className="board-col">
-          <Board fen={fen} orientation={orientation} movable={movable} onMove={onMove} lastMove={last}
-            arrows={explore && lines[0] ? [lines[0].pv[0].slice(0, 4)] : arrows} className={flash} />
+          <Board fen={wm.view?.fen ?? fen} orientation={orientation} movable={wm.wrong ? undefined : movable} onMove={onMove}
+            lastMove={wm.view ? wm.view.last : last}
+            arrows={wm.view ? wm.view.arrows : explore && lines[0] ? [lines[0].pv[0].slice(0, 4)] : arrows} className={flash} />
           {explore && <EvalBar line={lines[0]} loading={loading} />}
         </div>
         <aside className="side">
@@ -236,7 +249,12 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
 
           {state === 'solved' && <div className="feedback good"><b>✓ Gelöst!</b> Wertung des Puzzles: {pz.rating}</div>}
           {state === 'failed' && <div className="feedback bad"><b>✕ Nicht ganz.</b> Die Stellung landet im Fehlerheft.</div>}
-          {state === 'playing' && failedThis.current && !rush && (
+          {wm.wrong && !rush && (
+            <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading}
+              onReplay={wm.replay} onRetry={() => { wm.clear(); setArrows([]); }}
+              onAcceptAlt={() => { wm.clear(); setArrows([pz.moves[ply].slice(0, 4)]); }} />
+          )}
+          {state === 'playing' && failedThis.current && !rush && !wm.wrong && (
             <div className="feedback bad">Falscher Zug – versuch es weiter oder lass dir die Lösung zeigen.</div>
           )}
 

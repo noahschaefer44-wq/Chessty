@@ -7,6 +7,8 @@ import { tryMove, sanDe, uci } from '../lib/chess';
 import { stripSan } from '../content/walk';
 import { sound } from '../lib/sound';
 import { openingName } from '../lib/openings';
+import { useWrongMove } from '../lib/useWrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 export default function OpeningDrill({ id, line }: { id: string; line: number }) {
   const lesson = lessonById(id);
@@ -19,6 +21,13 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
   const [name, setName] = useState('');
   const [round, setRound] = useState(0);
   const prog = useProgress();
+  const wm = useWrongMove();
+  const retry = () => {
+    const exp = new Chess(positions[ply].fen).move(drill!.moves[ply]);
+    wm.clear();
+    setArrows([exp.from + exp.to]);
+    setMsg(`Zieh jetzt ${sanDe(exp.san)} selbst.`);
+  };
 
   const positions = useMemo(() => {
     const c = new Chess();
@@ -60,7 +69,7 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
   if (!lesson || !drill) return <p>Training nicht gefunden.</p>;
 
   function onMove(u: string) {
-    if (!drill || done || !myTurn(ply)) return;
+    if (!drill || done || !myTurn(ply) || wm.wrong) return;
     const c = new Chess(positions[ply].fen);
     const m = tryMove(c, u);
     if (!m) return;
@@ -75,10 +84,14 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
     sound.bad();
     setFlash('');
     requestAnimationFrame(() => setFlash('flash-bad'));
-    setErrors((e) => e + 1);
     const exp = new Chess(positions[ply].fen).move(expected);
-    setArrows(['!' + u, exp.from + exp.to]);
-    setMsg(`${sanDe(m.san)} gehört nicht zu dieser Variante. Hier spielt man ${sanDe(exp.san)}. Zieh ihn jetzt selbst.`);
+    setArrows([]);
+    setMsg('');
+    // Erklären: Ist der Zug spielbar (andere Eröffnung) oder ein echter Fehler?
+    wm.check(positions[ply].fen, u, expected, { openingMoves: drill.moves.slice(0, ply) }).then((info) => {
+      if (info?.verdict !== 'ok') setErrors((e) => e + 1);
+    });
+    setMsg(`In dieser Variante spielt man ${sanDe(exp.san)}.`);
     addReview({
       id: `drill:${id}:${line}:${ply}`,
       fen: positions[ply].fen,
@@ -95,8 +108,9 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
       <a className="back" href="#/eroeffnungen">← Eröffnungen</a>
       <div className="trainer">
         <div className="board-col">
-          <Board fen={positions[ply].fen} lastMove={positions[ply].last} orientation={drill.color}
-            movable={!done && myTurn(ply) ? drill.color : undefined} onMove={onMove} arrows={arrows} className={flash} />
+          <Board fen={wm.view?.fen ?? positions[ply].fen} lastMove={wm.view ? wm.view.last : positions[ply].last} orientation={drill.color}
+            movable={!done && myTurn(ply) && !wm.wrong ? drill.color : undefined} onMove={onMove}
+            arrows={wm.view ? wm.view.arrows : arrows} className={flash} />
         </div>
         <aside className="side">
           <div>
@@ -113,6 +127,10 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
               ))}
             </div>
           </div>
+          {wm.wrong ? (
+            <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading}
+              onReplay={wm.replay} onRetry={retry} onAcceptAlt={retry} />
+          ) : null}
           {msg && <div className="feedback bad">{msg}</div>}
           {done ? (
             <div className="feedback good">
@@ -122,7 +140,7 @@ export default function OpeningDrill({ id, line }: { id: string; line: number })
             !myTurn(ply) ? <p className="mono muted">Gegner zieht …</p> : <p className="mono muted">Dein Zug.</p>
           )}
           <div className="row">
-            <button className="btn small" onClick={() => { setPly(0); setErrors(0); setArrows([]); setMsg(''); setRound((r) => r + 1); }}>Neu starten</button>
+            <button className="btn small" onClick={() => { wm.clear(); setPly(0); setErrors(0); setArrows([]); setMsg(''); setRound((r) => r + 1); }}>Neu starten</button>
             <a className="btn small ghost" href={'#/lektion/' + lesson.id}>Zur Lektion</a>
             <span className="spacer" />
             {done && prog.repertoire.length > 0 && (

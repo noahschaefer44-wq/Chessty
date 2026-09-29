@@ -9,11 +9,13 @@ import { walkLesson, stripSan } from '../content/walk';
 import { completeLesson, addReview, loseHeart, useProgress, heartsNow } from '../lib/progress';
 import { confetti } from '../lib/confetti';
 import NoHearts from '../components/NoHearts';
-import { engine, formatEval } from '../lib/engine';
+import { formatEval } from '../lib/engine';
 import { tryMove, uci, sanDe, uciToSan } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
 import { useKeys } from '../lib/useKeys';
+import { explainWrongMove, type WrongMoveInfo } from '../lib/wrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 type Phase = 'show' | 'task' | 'solved';
 
@@ -32,6 +34,8 @@ export default function LessonPlayer({ id }: { id: string }) {
   const [flash, setFlash] = useState('');
   const [finished, setFinished] = useState(false);
   const timers = useRef<number[]>([]);
+  const [wrong, setWrong] = useState<{ san: string; uci: string; known?: ExplainT; info: WrongMoveInfo | null; loading: boolean } | null>(null);
+  const wrongToken = useRef(0);
 
   const step = lesson?.steps[idx];
   const pos = positions[idx];
@@ -52,6 +56,8 @@ export default function LessonPlayer({ id }: { id: string }) {
     if (!step || !pos) return;
     clearTimers();
     setFeedback(null);
+    setWrong(null);
+    wrongToken.current++;
     setExtraArrows([]);
     setHint(false);
     setExplore(false);
@@ -111,48 +117,20 @@ export default function LessonPlayer({ id }: { id: string }) {
       sound.move();
       return;
     }
-    if (!step || step.kind !== 'move' || phase !== 'task') return;
+    if (!step || step.kind !== 'move' || phase !== 'task' || wrong) return;
     const s = step as MoveStep;
     const c = new Chess(pos.shown);
     const m = tryMove(c, u);
     if (!m) return;
     const ok = s.solution.map(stripSan).includes(stripSan(m.san));
     if (ok) {
-      sound.good();
-      blink('flash-good');
-      setFen(c.fen());
-      setLast([m.from, m.to]);
-      setPhase('solved');
-      const isMain = stripSan(m.san) === stripSan(s.solution[0]);
-      const mainSan = new Chess(pos.shown).move(s.solution[0]).san;
-      setFeedback({
-        good: true,
-        text: isMain ? s.success : { ...s.success, short: `Auch gut! Die Lektion folgt der Hauptvariante ${sanDe(mainSan)}.\n\n` + s.success.short },
-      });
-      setExtraArrows(s.successArrows ?? []);
-      // Bei Alternativzug auf die Hauptvariante umschalten, damit die folgenden Schritte passen
-      const line = isMain ? c : new Chess(pos.shown);
-      if (!isMain)
-        later(() => {
-          const mm = line.move(s.solution[0]);
-          setFen(line.fen());
-          setLast([mm.from, mm.to]);
-        }, 900);
-      if (s.reply) {
-        later(() => {
-          const r = line.move(s.reply!);
-          setFen(line.fen());
-          setLast([r.from, r.to]);
-          r.captured ? sound.capture() : sound.move();
-        }, isMain ? 700 : 1600);
-      }
+      solved(c, m, stripSan(m.san) === stripSan(s.solution[0]));
       return;
     }
-    // Falscher Zug
+    // Falscher Zug: stehen lassen, erklären, Widerlegung zeigen – der Spieler entscheidet selbst, wann er es nochmal versucht
     sound.bad();
     blink('flash-bad');
     setErrors((e) => e + 1);
-    loseHeart();
     setFen(c.fen());
     setLast([m.from, m.to]);
     const known = s.mistakes?.find((x) => stripSan(x.san) === stripSan(m.san));
@@ -165,30 +143,82 @@ export default function LessonPlayer({ id }: { id: string }) {
         note: s.success.short,
         source: 'Lektion',
       });
-    if (known) {
-      setFeedback({ good: false, text: known.text });
-      setExtraArrows(['!' + u]);
-    } else {
-      setFeedback({ good: false, text: { short: `${sanDe(m.san)} ist hier nicht der gesuchte Zug. Die Engine prüft, was der Gegner darauf hätte …` } });
-      setExtraArrows(['!' + u]);
-      const r = await engine.analyse(c.fen(), { depth: 12 });
-      const reply = r.best && r.best !== '(none)' ? tryMove(new Chess(c.fen()), r.best) : null;
-      setFeedback({
-        good: false,
-        text: {
-          short: reply
-            ? `Nach ${sanDe(m.san)} hat der Gegner ${sanDe(reply.san)} (Bewertung ${formatEval(r.lines[0])}). Versuch es noch einmal!`
-            : `${sanDe(m.san)} ist nicht der gesuchte Zug. Versuch es noch einmal!`,
-          why: 'Denk an die Leitfragen: Welche Figuren stehen ungeschützt? Welche Schachgebote, Schlagzüge und Drohungen gibt es? Was will der Gegner?',
-        },
-      });
-      if (reply) setExtraArrows(['!' + u, reply.from + reply.to]);
+    if (known) loseHeart();
+    const token = ++wrongToken.current;
+    setWrong({ san: sanDe(m.san), uci: u, known: known?.text, info: null, loading: true });
+    setExtraArrows(['!' + u]);
+    try {
+      const info = await explainWrongMove(pos.shown, u, s.solution[0], { depth: 12 });
+      if (token !== wrongToken.current) return;
+      if (!known && info.verdict !== 'ok') loseHeart();
+      setWrong({ san: sanDe(m.san), uci: u, known: known?.text, info, loading: false });
+      setExtraArrows(info.arrows);
+    } catch {
+      if (token !== wrongToken.current) return;
+      if (!known) loseHeart();
+      setWrong((w) => (w ? { ...w, loading: false } : w));
     }
-    // Zurück in die Aufgabenstellung
-    later(() => {
-      setFen(pos.shown);
-      setLast(pos.lastMove);
-    }, 1400);
+  }
+
+  function solved(c: Chess, m: NonNullable<ReturnType<typeof tryMove>>, isMain: boolean) {
+    const s = step as MoveStep;
+    sound.good();
+    blink('flash-good');
+    setFen(c.fen());
+    setLast([m.from, m.to]);
+    setPhase('solved');
+    const mainSan = new Chess(pos.shown).move(s.solution[0]).san;
+    setFeedback({
+      good: true,
+      text: isMain ? s.success : { ...s.success, short: `Auch gut! Die Lektion folgt der Hauptvariante ${sanDe(mainSan)}.\n\n` + s.success.short },
+    });
+    setExtraArrows(s.successArrows ?? []);
+    // Bei Alternativzug auf die Hauptvariante umschalten, damit die folgenden Schritte passen
+    const line = isMain ? c : new Chess(pos.shown);
+    if (!isMain)
+      later(() => {
+        const mm = line.move(s.solution[0]);
+        setFen(line.fen());
+        setLast([mm.from, mm.to]);
+      }, 900);
+    if (s.reply) {
+      later(() => {
+        const r = line.move(s.reply!);
+        setFen(line.fen());
+        setLast([r.from, r.to]);
+        r.captured ? sound.capture() : sound.move();
+      }, isMain ? 700 : 1600);
+    }
+  }
+
+  function retry() {
+    clearTimers();
+    wrongToken.current++;
+    setWrong(null);
+    setExtraArrows([]);
+    setFen(pos.shown);
+    setLast(pos.lastMove);
+  }
+
+  function replayRefutation() {
+    const info = wrong?.info;
+    if (!info) return;
+    clearTimers();
+    setFen(info.fens[0]);
+    setLast([wrong!.uci.slice(0, 2), wrong!.uci.slice(2, 4)]);
+    info.fens.slice(1).forEach((f, i) =>
+      later(() => {
+        setFen(f);
+        setLast(info.moves[i]);
+        sound.move();
+      }, 800 * (i + 1)),
+    );
+  }
+
+  function acceptAlt(u: string) {
+    const c = new Chess(pos.shown);
+    const m = tryMove(c, u);
+    if (m) solved(c, m, false);
   }
 
   function next() {
@@ -269,7 +299,7 @@ export default function LessonPlayer({ id }: { id: string }) {
           <Board
             fen={fen}
             orientation={orientation}
-            movable={explore ? 'both' : phase === 'task' ? (new Chess(pos.shown).turn() === 'w' ? 'white' : 'black') : undefined}
+            movable={explore ? 'both' : phase === 'task' && !wrong ? (new Chess(pos.shown).turn() === 'w' ? 'white' : 'black') : undefined}
             onMove={onUserMove}
             lastMove={last}
             arrows={arrows}
@@ -317,7 +347,23 @@ export default function LessonPlayer({ id }: { id: string }) {
             </p>
           )}
 
-          {feedback && !explore && (
+          {wrong && !explore && (
+            <WrongMovePanel
+              san={wrong.san}
+              known={wrong.known}
+              info={wrong.info}
+              loading={wrong.loading}
+              onReplay={replayRefutation}
+              onRetry={retry}
+              onAcceptAlt={() => {
+                const u = wrong.uci;
+                retry();
+                acceptAlt(u);
+              }}
+            />
+          )}
+
+          {feedback && !explore && !wrong && (
             <div className={'feedback ' + (feedback.good ? 'good' : 'bad')}>
               <b>{feedback.good ? '✓ Richtig! ' : '✕ '}</b>
               <Rich text={feedback.text.short} />
@@ -344,7 +390,7 @@ export default function LessonPlayer({ id }: { id: string }) {
             {idx > 0 && (
               <button className="btn small ghost" onClick={() => setIdx(idx - 1)}>← Zurück</button>
             )}
-            {step.kind === 'move' && phase === 'task' && (
+            {step.kind === 'move' && phase === 'task' && !wrong && (
               <>
                 <button
                   className="btn small"

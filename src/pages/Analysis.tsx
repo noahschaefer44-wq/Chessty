@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
 import { EvalBar } from '../components/Widgets';
-import { engine, winChance, type EngineLine } from '../lib/engine';
+import { engine, type EngineLine } from '../lib/engine';
+import { gameAccuracy } from '../lib/accuracy';
 import { sanDe, uci } from '../lib/chess';
 import { addReview, addPatterns } from '../lib/progress';
 import { Rich } from '../components/Explain';
@@ -99,7 +100,7 @@ export default function Analysis() {
         evals[i] = { depth: 0, multipv: 1, pv: [], cp: g.isCheckmate() ? (g.turn() === 'w' ? -100 : 100) : 0 };
         continue;
       }
-      const r = await engine.analyse(fens[i], { depth: 12 });
+      const r = await engine.analyse(fens[i], { depth: 14 });
       evals[i] = r.lines[0];
       bests[i] = r.best;
     }
@@ -114,16 +115,15 @@ export default function Analysis() {
   }
 
   const stats = useMemo(() => {
-    const s = { w: { inaccuracy: 0, mistake: 0, blunder: 0, acc: 0, n: 0 }, b: { inaccuracy: 0, mistake: 0, blunder: 0, acc: 0, n: 0 } };
-    for (const p of plies) {
-      if (!p.quality) continue;
-      const side = s[p.color];
-      if (p.quality in side) (side as Record<string, number>)[p.quality]++;
-      const mine = p.color === 'w';
-      const drop = Math.max(0, (mine ? winChance(p.evalBefore) : 1 - winChance(p.evalBefore)) - (mine ? winChance(p.evalAfter) : 1 - winChance(p.evalAfter)));
-      side.acc += Math.max(0, 100 - drop * 250);
-      side.n++;
-    }
+    const s = { w: { inaccuracy: 0, mistake: 0, blunder: 0, acc: 0 }, b: { inaccuracy: 0, mistake: 0, blunder: 0, acc: 0 } };
+    if (!plies.length || !plies[0].quality) return s;
+    for (const p of plies) if (p.quality && p.quality in s[p.color]) (s[p.color] as Record<string, number>)[p.quality]++;
+    // Bewertungen in Centipawns aus Sicht von Weiß (Matt = ±10000)
+    const toCp = (l?: EngineLine) => (!l ? 0 : l.mate !== undefined ? (l.mate > 0 ? 10000 : l.mate < 0 ? -10000 : 0) : Math.round((l.cp ?? 0) * 100));
+    const cps = [toCp(plies[0].evalBefore), ...plies.map((p) => toCp(p.evalAfter))];
+    const acc = gameAccuracy(cps, plies[0].color === 'w');
+    s.w.acc = acc.white;
+    s.b.acc = acc.black;
     return s;
   }, [plies]);
 
@@ -201,7 +201,7 @@ export default function Analysis() {
             {(['w', 'b'] as const).map((c) => (
               <div className="kpi" key={c}>
                 <span>{c === 'w' ? 'Weiß' : 'Schwarz'}{me === c ? ' (du)' : ''} · Genauigkeit</span>
-                <b>{Math.round(stats[c].acc / Math.max(1, stats[c].n))}%</b>
+                <b>{Math.round(stats[c].acc)}%</b>
                 <span className="mono">{stats[c].blunder}?? · {stats[c].mistake}? · {stats[c].inaccuracy}?!</span>
               </div>
             ))}

@@ -9,6 +9,8 @@ import { tryMove, sanDe } from '../lib/chess';
 import { addXp, update, bump } from '../lib/progress';
 import { sound } from '../lib/sound';
 import { confetti } from '../lib/confetti';
+import { useWrongMove } from '../lib/useWrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 /** Kapitelprüfung (kind = 'kapitel', arg = 'taktik-2') oder Wiederholung (kind = 'wdh', arg = Lektions-ids). */
 export default function ExamPlayer({ kind, arg }: { kind: string; arg: string }) {
@@ -23,6 +25,7 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
   const [done, setDone] = useState(false);
   const [flash, setFlash] = useState('');
   const item = items[i];
+  const wm = useWrongMove();
 
   if (!items.length) return <p>Für dieses Kapitel gibt es noch keine Aufgaben.</p>;
 
@@ -44,7 +47,10 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
     if (ok) {
       sound.good();
       setScore((s) => s + 1);
-    } else sound.bad();
+    } else {
+      sound.bad();
+      wm.check(item.fen, u, item.solution[0]);
+    }
   }
 
   function next() {
@@ -52,6 +58,7 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
       setI(i + 1);
       setFen(items[i + 1].fen);
       setAnswer(null);
+      wm.clear();
       return;
     }
     const final = score;
@@ -91,8 +98,8 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
       <a className="back" href={chapter ? '#/lernen/' + cat : '#/'}>← Lernpfad</a>
       <div className="trainer">
         <div className="board-col">
-          <Board fen={fen} orientation={sideToMove(item.fen)} movable={answer ? undefined : sideToMove(item.fen)} onMove={onMove}
-            arrows={answer && !answer.ok ? [correctSan.from + correctSan.to] : []} className={flash} />
+          <Board fen={wm.view?.fen ?? fen} lastMove={wm.view?.last} orientation={sideToMove(item.fen)} movable={answer ? undefined : sideToMove(item.fen)} onMove={onMove}
+            arrows={wm.view ? wm.view.arrows : answer && !answer.ok ? [correctSan.from + correctSan.to] : []} className={flash} />
         </div>
         <aside className="side">
           <div>
@@ -109,6 +116,9 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
               <b>{answer.ok ? '✓ Richtig! ' : `✕ ${sanDe(answer.san)} – richtig war ${sanDe(correctSan.san)}. `}</b>
               <Rich text={item.success.short} />
             </div>
+          )}
+          {answer && !answer.ok && wm.wrong && (
+            <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading} onReplay={wm.replay} />
           )}
           <div className="row">
             <span className="spacer" />

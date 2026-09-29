@@ -11,6 +11,8 @@ import { stripSan } from '../content/walk';
 import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
 import { useKeys } from '../lib/useKeys';
+import { useWrongMove } from '../lib/useWrongMove';
+import WrongMovePanel from '../components/WrongMovePanel';
 
 export default function MasterGamePlayer({ id }: { id: string }) {
   const g = masterById(id);
@@ -33,6 +35,7 @@ export default function MasterGamePlayer({ id }: { id: string }) {
   const [auto, setAuto] = useState(false);
   const [engineOn, setEngineOn] = useState(false);
   const [finished, setFinished] = useState(false);
+  const wm = useWrongMove();
 
   const moment = g?.moments.find((m) => m.ply === ply);
   const total = g?.moves.length ?? 0;
@@ -87,7 +90,7 @@ export default function MasterGamePlayer({ id }: { id: string }) {
   }
 
   function onMove(u: string) {
-    if (guessing === null || !moment) return;
+    if (guessing === null || !moment || wm.wrong) return;
     const c = new Chess(positions[ply].fen);
     const m = tryMove(c, u);
     if (!m) return;
@@ -103,10 +106,17 @@ export default function MasterGamePlayer({ id }: { id: string }) {
     sound.bad();
     setWrong(['!' + u]);
     setTries((t) => t + 1);
-    if (tries >= 2) giveUp();
+    // Ohne Lösung zu verraten erklären, warum der Zug schwächer ist
+    wm.check(positions[ply].fen, u);
+  }
+
+  function retry() {
+    wm.clear();
+    if (tries >= 3) giveUp();
   }
 
   function giveUp() {
+    wm.clear();
     setFound((f) => ({ ...f, [ply]: false }));
     setGuessing(null);
     setReveal(ply);
@@ -146,9 +156,9 @@ export default function MasterGamePlayer({ id }: { id: string }) {
       <a className="back" href="#/meister">← Meisterpartien</a>
       <div className="trainer">
         <div className="board-col">
-          <Board fen={pos.fen} lastMove={pos.last} orientation={g.hero}
-            movable={guessing !== null ? g.hero : undefined} onMove={onMove}
-            arrows={guessing !== null ? [...(moment?.arrows ?? []), ...wrong] : reveal === ply && moment?.arrows ? moment.arrows : engineOn && lines[0] ? [lines[0].pv[0].slice(0, 4)] : []} />
+          <Board fen={wm.view?.fen ?? pos.fen} lastMove={wm.view ? wm.view.last : pos.last} orientation={g.hero}
+            movable={guessing !== null && !wm.wrong ? g.hero : undefined} onMove={onMove}
+            arrows={wm.view ? wm.view.arrows : guessing !== null ? [...(moment?.arrows ?? []), ...wrong] : reveal === ply && moment?.arrows ? moment.arrows : engineOn && lines[0] ? [lines[0].pv[0].slice(0, 4)] : []} />
           {engineOn && <EvalBar line={lines[0]} loading={loading} />}
         </div>
         <aside className="side">
@@ -163,7 +173,13 @@ export default function MasterGamePlayer({ id }: { id: string }) {
           {guessing !== null && moment && (
             <>
               <Explain text={moment.prompt} title={`Finde den Zug von ${heroName} (${3 - tries} Versuche)`} />
-              {wrong.length > 0 && <div className="feedback bad">Nicht der Meisterzug. Denk an die Frage oben!</div>}
+              {wm.wrong ? (
+                <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading}
+                  onReplay={wm.replay} onRetry={retry} />
+              ) : (
+                wrong.length > 0 && <div className="feedback bad">Nicht der Meisterzug. Denk an die Frage oben!</div>
+              )}
+              {wm.wrong && tries >= 3 && <p className="mono muted" style={{ fontSize: 13 }}>Keine Versuche mehr – „Nochmal versuchen“ zeigt die Auflösung.</p>}
               <div className="row">
                 <button className="btn small" onClick={giveUp}>Auflösen</button>
               </div>

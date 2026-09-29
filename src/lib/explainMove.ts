@@ -32,7 +32,8 @@ export function judgeMove(fenBefore: string, moveUci: string, before: EngineLine
   const wcA = me ? winChance(after) : 1 - winChance(after);
   const drop = wcB - wcA;
   const bestSan = best ? uciToSan(fenBefore, best) : undefined;
-  const quality: Quality = best === moveUci ? 'best' : drop > 0.3 ? 'blunder' : drop > 0.18 ? 'mistake' : drop > 0.09 ? 'inaccuracy' : 'good';
+  // Schwellen wie Lichess: 10 / 20 / 30 Prozentpunkte Gewinnchance
+  const quality: Quality = best === moveUci ? 'best' : drop >= 0.3 ? 'blunder' : drop >= 0.2 ? 'mistake' : drop >= 0.1 ? 'inaccuracy' : 'good';
   if (quality === 'best' || quality === 'good') return { quality, bestSan };
   const sign = me ? 1 : -1;
   const san = mv.san;

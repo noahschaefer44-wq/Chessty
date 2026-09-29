@@ -433,6 +433,32 @@ cg-board piece.dragging { filter: drop-shadow(4px 6px 0 rgba(0,0,0,.35)); }
 .glossary-big { max-width: min(720px, calc(100vh - 140px)); margin: 0 auto; box-shadow: 10px 10px 0 var(--fg); }
 .glossary-big .miniboard { border-width: 3px; }
 
+/* ───────── Varianten ───────── */
+.vboard { display: block; width: 100%; height: auto; border: 3px solid var(--fg); user-select: none; }
+.vboard-wrap { max-width: min(720px, calc(100vh - 140px)); margin: 0 auto; box-shadow: 8px 8px 0 var(--fg); transition: opacity .2s; }
+.vboard-wrap.thinking { opacity: .92; }
+.vboard .sq-hit { cursor: pointer; }
+.vboard .sq-hit:hover { fill: rgba(0, 0, 0, .08); }
+.pocket { display: flex; gap: 6px; align-items: center; min-height: 48px; max-width: min(720px, calc(100vh - 140px)); margin: 8px auto; flex-wrap: wrap; }
+.pocket-piece { display: flex; align-items: center; gap: 2px; background: var(--bg); border: 2px solid var(--fg); padding: 2px 6px 2px 2px; cursor: pointer; color: var(--fg);
+  transition: transform .2s var(--snap), box-shadow .2s; }
+.pocket-piece:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--fg); }
+.pocket-piece.on { background: var(--fg); color: var(--bg); }
+.pocket-piece:disabled { cursor: default; opacity: .7; }
+.bot-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.bot-card { display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer; font: inherit; color: var(--fg); background: var(--bg); }
+.variant-card { text-decoration: none; color: inherit; }
+.variant-card .vboard { border-width: 2px; transition: transform .3s var(--snap); }
+.variant-card:hover .vboard { transform: scale(1.03) rotate(-1deg); }
+.input { font: inherit; padding: 8px 10px; border: 2px solid var(--fg); background: var(--bg); color: var(--fg); border-radius: 0; }
+textarea.input { min-height: 90px; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-bottom: 10px; }
+.swap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0 10px; }
+.toggle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px 12px; margin: 6px 0 12px; }
+.toggle-row { display: flex; gap: 8px; align-items: center; font-size: 14px; padding: 4px 0; cursor: pointer; }
+.toggle-row input { accent-color: var(--fg); width: 16px; height: 16px; }
+.btn.disabled { opacity: .4; pointer-events: none; }
+
 /* ───────── Editor ───────── */
 .palette { display: flex; gap: 4px; justify-content: center; margin: 10px auto; max-width: min(720px, calc(100vh - 140px)); }
 .palette-btn { flex: 1; max-width: 64px; aspect-ratio: 1; background: var(--bg); border: 2px solid var(--fg); cursor: pointer; padding: 4px; transition: transform .2s var(--snap), background .2s; }
