@@ -73,6 +73,7 @@ const MORE = [
   { path: 'profil', label: 'Profil & Einstellungen' },
   { path: 'rechtliches', label: 'Impressum & Datenschutz' },
   { path: 'salon', label: '♟ Spielesalon' },
+  { path: 'ordner', label: '📁 Zu den Ordnern' },
 ];
 const MOBILE = ['', 'taktik', 'training', 'spielen', 'mehr'];
 
@@ -84,6 +85,8 @@ function page(r: string[]) {
       return <Learn category={r[1]} />;
     case 'lektion':
       return <LessonPlayer id={r[1]} />;
+    case 'ordner':
+      return <LockNow />;
     case 'salon':
       return <Salon id={r[1]} key={r[1] ?? 'start'} />;
     case 'plan':
@@ -158,6 +161,15 @@ function page(r: string[]) {
     default:
       return <Home />;
   }
+}
+
+/** Zur Tarn-Ansicht zurück */
+function LockNow() {
+  useEffect(() => {
+    history.replaceState(null, '', '#/');
+    window.dispatchEvent(new Event('chessty-lock'));
+  }, []);
+  return null;
 }
 
 /** Mobile Übersicht aller Bereiche. */

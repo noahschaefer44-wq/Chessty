@@ -16,6 +16,11 @@ for (const width of [360, 1280]) {
   const page = await browser.newPage({ viewport: { width, height: 800 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  // Tarn-Ansicht: Einstellungen → Ton aus öffnet die App (bleibt bei Hash-Wechseln offen)
+  await page.goto(BASE);
+  await page.getByLabel('Einstellungen').click();
+  await page.getByRole('switch').first().click();
+  await page.waitForTimeout(600);
   for (const r of ROUTES) {
     errors.length = 0;
     await page.goto(BASE + '#/' + r);

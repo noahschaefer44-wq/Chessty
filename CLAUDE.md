@@ -29,6 +29,10 @@ npx tsx scripts/accuracy-check.ts   # Genauigkeitsformel gegen echte Lichess-Par
 ```
 CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltsprüfung aus. Vor jedem Push mindestens `npm run build` laufen lassen; bei Inhaltsänderungen zusätzlich `npm run validate -- <id>`.
 
+## Tarn-Startseite (Wunsch des Eigentümers)
+- Beim Öffnen erscheint immer zuerst `src/cover/Cover.tsx` (Ordner-Ansicht im Stil einer Notizen-App, App-Name „Berufsschulordner“, Ordner-Icon). Erst Einstellungen → „Ton“ ausschalten öffnet Chessty (`src/cover/Gate.tsx`). Nichts wird gespeichert: Neuladen, zweimal Esc oder „Mehr → Zu den Ordnern“ zeigt wieder die Ordner.
+- Browser-Tests müssen erst entsperren (siehe `scripts/e2e-smoke.mjs`).
+
 ## Architektur
 - **Stack**: Vite 8, React 19, TypeScript 7, `vite-plugin-pwa` (registerType `prompt` → Update-Hinweis), Hash-Routing (`src/lib/router.ts`, `#/pfad/arg`), Seiten per `React.lazy` in `src/App.tsx` (`page()`-Switch + `NAV`/`MORE`-Menüs).
 - **Schach**: `chess.js` 1.4 (Regeln), `chessground` 9 (Brett, `src/components/Board.tsx`), Stockfish 19 lite single-thread als WASM in einem Web Worker (`public/engine/`, Wrapper `src/lib/engine.ts`, Hook `useEngine(fen, enabled, depth)`).
