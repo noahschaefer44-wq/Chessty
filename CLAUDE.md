@@ -66,8 +66,8 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
 - Achtung: In derselben Datenbank existiert eine fremde Migration `kraftteller_schema` (nicht von Chessty). Nicht anfassen, Eigentümer fragen.
 
 ## Deploy
-- Git-Branch: **`chessty-app`** (Remote `noahschaefer44-wq/chessty`, öffentlich wegen GPL, Standard-Branch). Push: `git push -u origin chessty-app`.
-- **Live über GitHub Pages**: https://noahschaefer44-wq.github.io/chessty/ – jeder Push auf `chessty-app` baut und veröffentlicht automatisch (`.github/workflows/pages.yml`). Netlify war wegen aufgebrauchter Konto-Credits gesperrt.
+- Git-Branch: **`chessty-app`** (Remote `noahschaefer44-wq/berufsschulordner`, öffentlich wegen GPL, Standard-Branch). Push: `git push -u origin chessty-app`.
+- **Live über GitHub Pages**: https://noahschaefer44-wq.github.io/berufsschulordner/ – jeder Push auf `chessty-app` baut und veröffentlicht automatisch (`.github/workflows/pages.yml`). Netlify war wegen aufgebrauchter Konto-Credits gesperrt.
 - Netlify-Site-ID `51c9664c-6707-4908-8618-8434205b70c7` (Name „chessty“). Deploy über das Netlify-MCP: `netlify-deploy-services-updater` → `deploy-site` mit der Site-ID aufrufen, den zurückgegebenen `npx -y @netlify/mcp@latest … --proxy-path …`-Befehl im Repo-Ordner ausführen (baut auf Netlify mit `netlify.toml`). Danach `curl -s -o /dev/null -w "%{http_code}" https://chessty.netlify.app/` → 200.
 - Commit-Nachrichten auf Deutsch; Attribution-Zeilen gemäß Sitzungsvorgabe anhängen.
 
