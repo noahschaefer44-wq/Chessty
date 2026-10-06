@@ -132,7 +132,9 @@ for (const p of PRACTICE) {
   try {
     new Chess(p.fen);
     const r = await fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(p.fen)}`).then((r) => r.json());
-    const want = p.goal === 'draw' ? ['draw'] : ['win'];
+    // Zieht der Gegner zuerst (p.side), meldet die Datenbank das Ergebnis aus seiner Sicht
+    const oppToMove = !!p.side && p.side !== p.fen.split(' ')[1];
+    const want = p.goal === 'draw' ? ['draw'] : [oppToMove ? 'loss' : 'win'];
     if (!want.includes(r.category)) warn(`Praxis ${p.id}: Datenbank sagt ${r.category}`);
     else console.log(`✓ Praxis ${p.id}: ${r.category}${r.dtm ? ' DTM ' + r.dtm : ''}`);
   } catch (e) {

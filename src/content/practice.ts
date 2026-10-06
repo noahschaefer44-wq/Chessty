@@ -10,6 +10,8 @@ export interface Practice {
   /** Zugbegrenzung (eigene Züge) */
   limit: number;
   text: Explain;
+  /** Eigene Farbe, falls der Gegner zuerst zieht */
+  side?: 'w' | 'b';
 }
 
 // Übungsstellungen gegen perfekte Verteidigung (Lichess-Endspieldatenbank, offline Stockfish)
@@ -35,8 +37,8 @@ export const PRACTICE: Practice[] = [
       why: 'Das schwerste Grundmatt. Erst den König an den Rand treiben, dann mit dem Springer-W-Manöver in die richtige Ecke schieben.',
       pro: 'Deletang-Methode: 1) an den Rand, 2) in die „falsche“ Ecke, 3) W-Manöver des Springers entlang des Randes. Maximal 33 Züge – die 50-Züge-Regel ist ein echter Gegner.' } },
   { id: 'kp-k-opp', title: 'Bauer durchbringen (Opposition)', level: 2, goal: 'promote', limit: 15,
-    fen: '8/8/8/4k3/8/4K3/4P3/8 w - - 0 1',
-    text: { short: 'Der König geht VOR den Bauern. Gewinne die Opposition, dann folgt der Bauer.',
+    fen: '8/8/8/4k3/8/4K3/4P3/8 b - - 0 1', side: 'w',
+    text: { short: 'Schwarz muss zuerst ziehen – du hast die Opposition. Der König geht VOR den Bauern, dann folgt der Bauer.',
       why: 'Wenn dein König ein Schlüsselfeld vor dem Bauern erreicht (hier d4, e4, f4 bzw. später die 6. Reihe), gewinnt der Bauer immer.',
       pro: 'Schlüsselfelder: Für einen Bauern auf der 2.–4. Reihe sind es die drei Felder zwei Reihen vor ihm. Achtung: e3 → Kd3/Kf3 ist hier der Test.' } },
   { id: 'kp-k-draw', title: 'Remis halten: König gegen Bauer', level: 2, goal: 'draw', limit: 15,

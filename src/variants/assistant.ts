@@ -1,22 +1,35 @@
 // Regel-Assistent: wandelt eine deutsche Beschreibung in Varianten-Regeln um.
 // 1. Wenn der Browser eine eingebaute, kostenlose KI hat (Chrome „Prompt API“ / Gemini Nano, läuft lokal), wird sie genutzt.
 // 2. Sonst (und als Absicherung) ein eigener Regel-Parser mit Schlüsselwörtern – kostenlos, offline, ohne Server.
-import { BASE_RULES, fen960, type Rules } from './engine';
+import { BASE_RULES, fen960, pieceName, setupSize, type PieceDef, type Rules } from './engine';
 
 export interface Design {
   name: string;
-  base: 'standard' | '960' | 'horde' | 'racing' | 'custom';
+  base: Base;
   customFen: string;
   /** Figurentausch: n/b/r/q → neue Figur oder '' (entfernen) */
   swap: Record<string, string>;
   /** Nur für eine Farbe entfernen/tauschen? */
   swapSide: 'both' | 'w' | 'b';
   rules: Rules;
+  /** Selbst definierte Figuren (Buchstaben x, y, j) */
+  customPieces?: Record<string, PieceDef>;
 }
 
-export const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w';
-export const HORDE = 'rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w';
-export const RACING = '8/8/8/8/8/8/krbnNBRK/qrbnNBRQ w';
+export type Base = 'standard' | '960' | 'horde' | 'racing' | 'losalamos' | 'capablanca' | 'grand' | 'pawns' | 'custom';
+
+/** Startaufstellungen der Werkstatt (Brett-Teil + Zugrecht) */
+export const BASES: Record<Exclude<Base, 'custom' | '960'>, { label: string; fen: string }> = {
+  standard: { label: 'Normale Grundstellung (8×8)', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w' },
+  horde: { label: 'Horde (36 Bauern gegen Armee)', fen: 'rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w' },
+  racing: { label: 'Königsrennen', fen: '8/8/8/8/8/8/krbnNBRK/qrbnNBRQ w' },
+  losalamos: { label: 'Kleines Brett 6×6 (Los Alamos)', fen: 'rnqknr/pppppp/6/6/PPPPPP/RNQKNR w' },
+  capablanca: { label: 'Breites Brett 10×8 (Capablanca)', fen: 'rnhbqkbcnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNHBQKBCNR w' },
+  grand: { label: 'Großes Brett 10×10 (Grand Chess)', fen: 'r8r/1nbqkchbn1/pppppppppp/10/10/10/10/PPPPPPPPPP/1NBQKCHBN1/R8R w' },
+  pawns: { label: 'Nur Bauern (Bauernkrieg)', fen: '8/pppppppp/8/8/8/8/PPPPPPPP/8 w' },
+};
+
+export const START = BASES.standard.fen;
 
 export const emptyDesign = (): Design => ({
   name: 'Meine Variante',
@@ -30,7 +43,7 @@ export const emptyDesign = (): Design => ({
 /** Startstellung aus dem Entwurf berechnen */
 export function designSetup(d: Design): string {
   if (d.base === '960' && !Object.keys(d.swap).length) return '960';
-  const fen = d.base === 'horde' ? HORDE : d.base === 'racing' ? RACING : d.base === 'custom' ? d.customFen : d.base === '960' ? fen960() : START;
+  const fen = d.base === 'custom' ? d.customFen : d.base === '960' ? fen960() : (BASES[d.base] ?? BASES.standard).fen;
   if (!Object.keys(d.swap).length) return fen;
   const [board, turn = 'w'] = fen.split(' ');
   const out = board.replace(/[a-zA-Z]/g, (ch) => {
@@ -49,14 +62,49 @@ export function designSetup(d: Design): string {
 }
 
 export function designRules(d: Design): Rules {
-  const extra = new Set(Object.values(d.swap).filter((x) => x && 'ach'.includes(x)));
+  const setup = designSetup(d);
+  // Märchen- und eigene Figuren aus der Startstellung dürfen auch durch Umwandlung entstehen
+  const board = setup === '960' ? '' : setup.split(' ')[0].toLowerCase();
+  const extra = new Set([...Object.values(d.swap), ...board].filter((x) => x && /[a-z]/.test(x) && !'pnbrqk'.includes(x)));
   const promo = [...d.rules.promo];
   for (const x of extra) if (!promo.includes(x)) promo.unshift(x);
-  return { ...d.rules, id: 'custom', name: d.name || 'Eigene Variante', setup: designSetup(d), promo };
+  const pieces = d.customPieces && Object.keys(d.customPieces).length ? d.customPieces : undefined;
+  return { ...d.rules, id: 'custom', name: d.name || 'Eigene Variante', setup, promo, pieces };
 }
 
-const DATIV: Record<string, string> = { n: 'Springern', b: 'Läufern', r: 'Türmen', q: 'Damen', a: 'Amazonen', c: 'Kanzlern', h: 'Erzbischöfen' };
-const NAMES: Record<string, string> = { n: 'Springer', b: 'Läufer', r: 'Türme', q: 'Damen', a: 'Amazonen', c: 'Kanzler', h: 'Erzbischöfe', p: 'Bauern', k: 'Könige' };
+/** Bauchgefühl-Wert einer Figur: Anzahl erreichbarer Felder aus der Mitte eines leeren 8×8-Bretts */
+export function autoValue(p: Omit<PieceDef, 'value'>): number {
+  let n = 0;
+  const sym = (vs: [number, number][]) => {
+    const out = new Set<string>();
+    for (const [a, b] of vs)
+      for (const [x, y] of [[a, b], [b, a]])
+        for (const sx of [1, -1]) for (const sy of [1, -1]) if (!p.forward || y * sy > 0) out.add(x * sx + ',' + y * sy);
+    return [...out].map((k) => k.split(',').map(Number));
+  };
+  for (const [df, dr] of sym(p.leaps)) if (Math.abs(df) <= 3 && Math.abs(dr) <= 3) n++;
+  for (const [df, dr] of sym(p.slides)) for (let k = 1; k <= (p.range || 7); k++) if (Math.abs(df * k) <= 3.5 && Math.abs(dr * k) <= 3.5) n++;
+  return Math.max(80, Math.round(n * 38));
+}
+
+const DATIV_: Record<string, string> = { n: 'Springern', b: 'Läufern', r: 'Türmen', q: 'Damen', a: 'Amazonen', c: 'Kanzlern', h: 'Erzbischöfen', m: 'Männern', l: 'Kamelen', z: 'Zebras', f: 'Ferzen', e: 'Elefanten', u: 'Wesiren' };
+const NAMES_: Record<string, string> = { n: 'Springer', b: 'Läufer', r: 'Türme', q: 'Damen', a: 'Amazonen', c: 'Kanzler', h: 'Erzbischöfe', p: 'Bauern', k: 'Könige', m: 'Männer', l: 'Kamele', z: 'Zebras', f: 'Ferzen', e: 'Elefanten', u: 'Wesire' };
+// Eigene Figuren (x, y, j) haben keine festen Namen – dann der Buchstabe
+const DATIV: Record<string, string> = new Proxy(DATIV_, { get: (o, k: string) => o[k] ?? k.toUpperCase() });
+const NAMES: Record<string, string> = new Proxy(NAMES_, { get: (o, k: string) => o[k] ?? k.toUpperCase() });
+
+/** Gangart in Worten (für eigene Figuren) */
+export function describePiece(p: PieceDef): string {
+  const parts: string[] = [];
+  const has = (vs: [number, number][], a: number, b: number) => vs.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  if (p.slides.length) {
+    const dirs = [has(p.slides, 1, 0) && 'gerade', has(p.slides, 1, 1) && 'schräg'].filter(Boolean).join(' und ');
+    parts.push(`gleitet ${dirs}${p.range ? ` bis zu ${p.range} Felder` : ''}`);
+  }
+  const L: [number, number, string][] = [[1, 0, 'ein Feld gerade'], [1, 1, 'ein Feld schräg'], [1, 2, 'springt wie ein Springer'], [1, 3, 'springt wie ein Kamel (3,1)'], [2, 3, 'springt wie ein Zebra (3,2)'], [2, 0, 'springt zwei Felder gerade'], [2, 2, 'springt zwei Felder schräg']];
+  for (const [a, b, t] of L) if (has(p.leaps, a, b)) parts.push(t);
+  return (parts.join(', ') || 'kann nicht ziehen') + (p.forward ? ' – nur vorwärts' : '');
+}
 
 /** Regeln in deutschen Sätzen beschreiben */
 export function describeRules(r: Rules, d?: Design): string[] {
@@ -64,8 +112,16 @@ export function describeRules(r: Rules, d?: Design): string[] {
   if (d) {
     if (d.base === '960') out.push('Die Grundreihe wird zufällig gemischt (Chess960).');
     if (d.base === 'horde') out.push('Horde-Aufstellung: Weiß hat 36 Bauern und keinen König.');
+    if (d.base === 'losalamos') out.push('Kleines 6×6-Brett ohne Läufer (Los Alamos).');
+    if (d.base === 'capablanca') out.push('Breites 10×8-Brett mit Kanzler und Erzbischof (Capablanca).');
+    if (d.base === 'grand') out.push('Großes 10×10-Brett (Grand Chess).');
+    if (d.base === 'pawns') out.push('Nur Bauern.');
+    for (const [k, p] of Object.entries(d.customPieces ?? {})) out.push(`Eigene Figur „${p.name}“ (${k.toUpperCase()}): ${describePiece(p)}.`);
     if (d.base === 'racing') out.push('Königsrennen-Aufstellung: alle Figuren auf den ersten beiden Reihen, keine Bauern.');
-    if (d.base === 'custom') out.push('Eigene Startstellung.');
+    if (d.base === 'custom') {
+      const { w, h } = setupSize(d.customFen);
+      out.push(`Eigene Startstellung (${w}×${h}).`);
+    }
     const side = d.swapSide === 'w' ? ' (nur Weiß)' : d.swapSide === 'b' ? ' (nur Schwarz)' : '';
     for (const [from, to] of Object.entries(d.swap)) out.push(to ? `${NAMES[from]} werden zu ${DATIV[to]}${side}.` : `Ohne ${NAMES[from]}${side}.`);
   }
@@ -78,7 +134,11 @@ export function describeRules(r: Rules, d?: Design): string[] {
   if (r.fog) out.push('Nebel: Man sieht nur Felder, die die eigenen Figuren erreichen.');
   if (r.checksToWin) out.push(`Wer ${r.checksToWin}-mal Schach gibt, gewinnt.`);
   if (r.hill) out.push('Wer den König ins Zentrum (d4, e4, d5, e5) bringt, gewinnt.');
-  if (r.race) out.push('Wer den König zuerst auf die 8. Reihe bringt, gewinnt; Schachgebote sind verboten.');
+  if (r.race) out.push('Wer den König zuerst auf die letzte Reihe bringt, gewinnt; Schachgebote sind verboten.');
+  if (r.captureWin) out.push(`Wer ${r.captureWin === 'k' ? 'den König' : 'alle ' + (NAMES_[r.captureWin] ?? pieceName(r.captureWin, r))} des Gegners schlägt, gewinnt.`);
+  if (r.promoteWins) out.push('Wer zuerst einen Bauern umwandelt, gewinnt.');
+  if (r.moveLimit) out.push(`Nach ${r.moveLimit} Zügen gewinnt, wer mehr Material hat.`);
+  if (r.noMovesLoses) out.push('Wer keinen Zug mehr hat, verliert.');
   if (r.stalemateWins && !r.antichess) out.push('Wer patt gesetzt ist, gewinnt.');
   if (!r.castling) out.push('Keine Rochade.');
   if (!r.pawnDouble) out.push('Bauern ziehen immer nur ein Feld.');
@@ -89,6 +149,11 @@ export function describeRules(r: Rules, d?: Design): string[] {
 
 const NUM: Record<string, number> = { ein: 1, eins: 1, einmal: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10 };
 const PIECE_WORDS: [RegExp, string][] = [
+  [/kamel/, 'l'],
+  [/zebra/, 'z'],
+  [/ferz|berater/, 'f'],
+  [/elefant/, 'e'],
+  [/wesir/, 'u'],
   [/amazone/, 'a'],
   [/kanzler/, 'c'],
   [/erzbisch|kardinal/, 'h'],
@@ -185,6 +250,40 @@ export function parseIdea(text: string, start: Design = emptyDesign()): ParseRes
       r.castling = false;
       if (d.base === 'standard') d.base = 'racing';
       hit('Königsrennen zur 8. Reihe');
+    }
+    if (/6\s*[x×*]\s*6|kleine[sn]? brett|los alamos/.test(s)) {
+      d.base = 'losalamos';
+      Object.assign(r, { castling: false, pawnDouble: false });
+      hit('Kleines 6×6-Brett');
+    }
+    if (/10\s*[x×*]\s*8|breite[sn]? brett|capablanca/.test(s)) {
+      d.base = 'capablanca';
+      hit('Breites 10×8-Brett mit Kanzler und Erzbischof');
+    }
+    if (/10\s*[x×*]\s*10|große[sn]? brett|grand chess/.test(s)) {
+      d.base = 'grand';
+      r.castling = false;
+      hit('Großes 10×10-Brett');
+    }
+    if (/bauernkrieg|nur (mit )?bauern\b/.test(s) && !/könig|gegen/.test(s)) {
+      d.base = 'pawns';
+      Object.assign(r, { kingSafety: false, castling: false, promoteWins: true, noMovesLoses: true });
+      hit('Nur Bauern – wer zuerst umwandelt, gewinnt');
+    }
+    if (/(umwandel|umwandlung|letzte reihe erreicht).*(gewinn|sieg)|(gewinn|sieg).*(umwandel|umwandlung)/.test(s) && !r.race && !r.promoteWins) {
+      r.promoteWins = true;
+      hit('Erste Umwandlung gewinnt');
+    }
+    const lim = s.match(/nach (\d+|zehn|fünfzehn|zwanzig|dreißig) zügen/);
+    if (lim && /material|mehr (figuren|punkte)/.test(s)) {
+      const words: Record<string, number> = { zehn: 10, fünfzehn: 15, zwanzig: 20, dreißig: 30 };
+      r.moveLimit = Math.max(5, Math.min(80, /\d/.test(lim[1]) ? Number(lim[1]) : words[lim[1]]));
+      hit(`Nach ${r.moveLimit} Zügen gewinnt mehr Material`);
+    }
+    const cw = /(schlägt|erobert|fängt|nimmt).*(gewinnt|sieg)/.test(s) && !/(statt|werden zu|wird zu|ersetz)/.test(s) ? pieceIn(s).filter((t) => t !== 'k') : [];
+    if (cw.length === 1) {
+      r.captureWin = cw[0];
+      hit(`Wer alle ${NAMES_[cw[0]] ?? cw[0]} des Gegners schlägt, gewinnt`);
     }
     if (/horde|nur bauern gegen|36 bauern|bauernarmee/.test(s)) {
       d.base = 'horde';
@@ -323,6 +422,10 @@ export async function parseWithBrowserAi(text: string): Promise<ParseResult | nu
 
 /** Beispiele als Anregung */
 export const IDEAS = [
+  'Springer werden zu Kamelen. Wer die Dame des Gegners schlägt, gewinnt.',
+  'Kleines Brett 6x6 und Schlagzwang.',
+  'Breites Brett 10x8. Nach 30 Zügen gewinnt, wer mehr Material hat.',
+  'Nur Bauern: Wer zuerst umwandelt, gewinnt.',
   'Wer zuerst 5 Schachgebote gibt, gewinnt. Keine Rochade.',
   'Türme werden zu Kanzlern und Läufer zu Erzbischöfen. Geschlagene Figuren darf man wieder einsetzen.',
   'Weiß spielt ohne Dame. Wer den König ins Zentrum bringt, gewinnt.',

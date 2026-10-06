@@ -15,6 +15,7 @@ export default function EndgamePractice({ id }: { id: string }) {
     return {
       ...pr,
       fen: mirrorFen(pr.fen, how),
+      side: pr.side && how === 'colors' ? (pr.side === 'w' ? ('b' as const) : ('w' as const)) : pr.side,
       title: pr.title + (variant === 1 ? ' (gespiegelt)' : ' (Farben getauscht)'),
       text: { short: mirrorText(pr.text.short, how), why: pr.text.why && mirrorText(pr.text.why, how), pro: pr.text.pro && mirrorText(pr.text.pro, how) },
     };

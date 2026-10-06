@@ -1,21 +1,25 @@
 import { PIECE_IMG } from '../components/pieceImages';
-import { fileOf, rankOf, sqName, PIECE_NAMES, type Pos } from './engine';
+import { sqName, pieceDef, pieceName, type Pos, type Rules } from './engine';
 
-const BASE: Record<string, string> = { a: 'q', c: 'r', h: 'b' };
-
-/** Figur zeichnen – Märchenfiguren als Grundfigur mit kleinem Springer-Abzeichen */
-export function PieceSvg({ p, x, y, size = 1 }: { p: string; x: number; y: number; size?: number }) {
+/** Figur zeichnen – Märchenfiguren und eigene Figuren als Grundbild mit kleinem Abzeichen */
+export function PieceSvg({ p, x, y, size = 1, rules }: { p: string; x: number; y: number; size?: number; rules?: Rules }) {
   const t = p.toLowerCase();
   const white = p !== t;
-  const base = BASE[t];
-  if (!base) return <image href={PIECE_IMG[p]} x={x} y={y} width={size} height={size} />;
-  const main = white ? base.toUpperCase() : base;
-  const n = white ? 'N' : 'n';
+  if (t === 'p' || 'nbrqk'.includes(t) && !rules?.pieces?.[t]) return <image href={PIECE_IMG[p]} x={x} y={y} width={size} height={size} />;
+  const d = pieceDef(t, rules);
+  const look = d?.look ?? 'p';
+  const main = white ? look.toUpperCase() : look;
+  const badge = d?.badge ?? t.toUpperCase();
   return (
     <g>
       <image href={PIECE_IMG[main]} x={x} y={y} width={size} height={size} />
       <circle cx={x + size * 0.78} cy={y + size * 0.22} r={size * 0.2} fill={white ? '#fff' : '#000'} stroke="#000" strokeWidth={size * 0.03} />
-      <image href={PIECE_IMG[n]} x={x + size * 0.6} y={y + size * 0.04} width={size * 0.36} height={size * 0.36} />
+      {badge === 'S' ? (
+        <image href={PIECE_IMG[white ? 'N' : 'n']} x={x + size * 0.6} y={y + size * 0.04} width={size * 0.36} height={size * 0.36} />
+      ) : (
+        <text x={x + size * 0.78} y={y + size * 0.3} fontSize={size * 0.24} textAnchor="middle" fontFamily="Space Grotesk, sans-serif" fontWeight="700"
+          fill={white ? '#000' : '#fff'}>{badge}</text>
+      )}
     </g>
   );
 }
@@ -42,8 +46,10 @@ export default function VariantBoard({
   check = -1,
   duckMode = false,
   onSquare,
+  rules,
 }: {
   pos: Pos;
+  rules?: Rules;
   flip?: boolean;
   selected?: number | null;
   targets?: number[];
@@ -53,10 +59,14 @@ export default function VariantBoard({
   duckMode?: boolean;
   onSquare?: (s: number) => void;
 }) {
-  const xy = (s: number) => (flip ? { x: 7 - fileOf(s), y: rankOf(s) } : { x: fileOf(s), y: 7 - rankOf(s) });
-  const cells = Array.from({ length: 64 }, (_, s) => s);
+  const W = pos.w;
+  const H = pos.h;
+  const fileOf = (s: number) => s % W;
+  const rankOf = (s: number) => Math.floor(s / W);
+  const xy = (s: number) => (flip ? { x: W - 1 - fileOf(s), y: rankOf(s) } : { x: fileOf(s), y: H - 1 - rankOf(s) });
+  const cells = Array.from({ length: W * H }, (_, s) => s);
   return (
-    <svg className="vboard" viewBox="0 0 8 8" role="img" aria-label="Schachbrett">
+    <svg className="vboard" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Schachbrett ${W} mal ${H}`} style={{ aspectRatio: `${W} / ${H}` }}>
       {cells.map((s) => {
         const { x, y } = xy(s);
         const dark = (fileOf(s) + rankOf(s)) % 2 === 0;
@@ -88,7 +98,7 @@ export default function VariantBoard({
         const p = pos.b[s];
         if (!p || hidden?.has(s)) return null;
         const { x, y } = xy(s);
-        return <PieceSvg key={'p' + s} p={p} x={x} y={y} />;
+        return <PieceSvg key={'p' + s} p={p} x={x} y={y} rules={rules} />;
       })}
       {pos.duck >= 0 && !hidden?.has(pos.duck) && <DuckSvg {...xy(pos.duck)} />}
       {hidden &&
@@ -105,17 +115,21 @@ export default function VariantBoard({
           <circle key={'t' + s} cx={x + 0.5} cy={y + 0.5} r={duckMode ? 0.1 : 0.15} fill="rgba(0,0,0,.35)" />
         );
       })}
-      {Array.from({ length: 8 }, (_, i) => (
-        <g key={'c' + i} fontSize="0.2" fontFamily="JetBrains Mono, monospace" fill="#333" pointerEvents="none">
-          <text x={i + 0.05} y={7.95}>{String.fromCharCode(97 + (flip ? 7 - i : i))}</text>
-          <text x={7.83} y={i + 0.22}>{flip ? i + 1 : 8 - i}</text>
-        </g>
+      {Array.from({ length: W }, (_, i) => (
+        <text key={'cf' + i} x={i + 0.05} y={H - 0.05} fontSize="0.2" fontFamily="JetBrains Mono, monospace" fill="#333" pointerEvents="none">
+          {String.fromCharCode(97 + (flip ? W - 1 - i : i))}
+        </text>
+      ))}
+      {Array.from({ length: H }, (_, i) => (
+        <text key={'cr' + i} x={W - 0.17 - (H > 9 ? 0.1 : 0)} y={i + 0.22} fontSize="0.2" fontFamily="JetBrains Mono, monospace" fill="#333" pointerEvents="none">
+          {flip ? i + 1 : H - i}
+        </text>
       ))}
       {onSquare &&
         cells.map((s) => {
           const { x, y } = xy(s);
           const p = pos.b[s];
-          const label = `${sqName(s)}${p && !hidden?.has(s) ? ' ' + (p === p.toUpperCase() ? 'weißer ' : 'schwarzer ') + PIECE_NAMES[p.toLowerCase()] : ''}${targets.includes(s) ? ', Ziel' : ''}`;
+          const label = `${sqName(s, W)}${p && !hidden?.has(s) ? ' ' + (p === p.toUpperCase() ? 'weiß: ' : 'schwarz: ') + pieceName(p.toLowerCase(), rules) : ''}${targets.includes(s) ? ', Ziel' : ''}`;
           return (
             <rect key={'k' + s} className="sq-hit" x={x} y={y} width="1" height="1" fill="transparent" onClick={() => onSquare(s)}
               tabIndex={0} role="button" aria-label={label}

@@ -1,6 +1,6 @@
 // Einfache, aber variantenfähige Schach-KI: Alpha-Beta mit Ruhesuche und Varianten-Bewertung.
 import {
-  VALUES, colorOf, fileOf, rankOf, kingSq, isCapture, legalMoves, legalCaptures, makeMove,
+  valueOf, colorOf, hillSquares, kingSq, isCapture, legalMoves, legalCaptures, makeMove,
   outcome, quickOutcome, duckSquares, type Move, type Pos, type Rules, type Outcome, type Color,
 } from './engine';
 
@@ -25,8 +25,12 @@ export const BOTS: BotLevel[] = [
 const MATE = 1_000_000;
 const INF = 10_000_000;
 
-function center(s: number) {
-  return 3 - Math.floor(Math.max(Math.abs(fileOf(s) - 3.5), Math.abs(rankOf(s) - 3.5)));
+/** Nähe zum Zentrum (0 = Rand … ca. 3 = Mitte), passend zur Brettgröße */
+function center(pos: Pos, s: number) {
+  const f = s % pos.w;
+  const r = Math.floor(s / pos.w);
+  const d = Math.max(Math.abs(f - (pos.w - 1) / 2), Math.abs(r - (pos.h - 1) / 2));
+  return Math.max(0, Math.floor(Math.min(pos.w, pos.h) / 2 - 1 - d + 0.5));
 }
 
 /** Bewertung aus Sicht von Weiß (Centipawns) */
@@ -34,25 +38,29 @@ export function evaluate(pos: Pos, rules: Rules): number {
   let mat = 0;
   let posi = 0;
   const horde = !pos.hadKing.w || !pos.hadKing.b;
-  for (let s = 0; s < 64; s++) {
+  const top = pos.h - 1;
+  const hill = rules.hill ? hillSquares(pos) : [];
+  for (let s = 0; s < pos.b.length; s++) {
     const p = pos.b[s];
     if (!p) continue;
     const c = colorOf(p);
     const sign = c === 'w' ? 1 : -1;
     const t = p.toLowerCase();
-    const v = rules.antichess && t === 'k' ? 250 : VALUES[t];
+    const v = rules.antichess && t === 'k' ? 250 : valueOf(t, rules);
     mat += sign * v;
-    const adv = c === 'w' ? rankOf(s) : 7 - rankOf(s);
-    if (t === 'p') posi += sign * adv * (horde ? 10 : 5) + sign * (center(s) >= 2 ? 8 : 0);
+    const rank = Math.floor(s / pos.w);
+    const adv = c === 'w' ? rank : top - rank;
+    const ctr = center(pos, s);
+    if (t === 'p') posi += sign * adv * (horde ? 10 : rules.promoteWins ? 40 + adv * 12 : 5) + sign * (ctr >= 2 ? 8 : 0);
     else if (t === 'k') {
-      if (rules.hill) posi += sign * center(s) * 140;
-      else if (rules.race) posi += sign * rankOf(s) * 160;
+      if (rules.hill) posi += sign * (hill.includes(s) ? 600 : ctr * 140);
+      else if (rules.race) posi += sign * rank * 160;
       else if (!rules.antichess) posi += sign * (adv === 0 ? 15 : -adv * 6);
-    } else posi += sign * center(s) * (t === 'q' || t === 'a' ? 3 : 9);
+    } else posi += sign * ctr * (v >= 900 ? 3 : 9);
   }
   if (rules.drops)
     for (const c of ['w', 'b'] as Color[])
-      for (const [t, n] of Object.entries(pos.pockets[c])) mat += (c === 'w' ? 1 : -1) * n * VALUES[t] * 0.9;
+      for (const [t, n] of Object.entries(pos.pockets[c])) mat += (c === 'w' ? 1 : -1) * n * valueOf(t, rules) * 0.9;
   if (rules.antichess) return -mat + posi * 0.2;
   let score = mat + posi;
   if (rules.checksToWin) score += (pos.checks.w ** 2 - pos.checks.b ** 2) * (600 / Math.max(1, rules.checksToWin - 1));
@@ -78,14 +86,14 @@ export function chooseMove(pos: Pos, rules: Rules, level: BotLevel): Move | null
   return best;
 }
 
-function orderScore(pos: Pos, m: Move): number {
+function orderScore(pos: Pos, m: Move, rules: Rules): number {
   let s = 0;
   if (isCapture(pos, m)) {
     const victim = pos.b[m.to]?.toLowerCase() ?? 'p';
     const attacker = pos.b[m.from]?.toLowerCase() ?? 'p';
-    s += 10_000 + VALUES[victim] * 10 - VALUES[attacker];
+    s += 10_000 + valueOf(victim, rules) * 10 - valueOf(attacker, rules);
   }
-  if (m.promo) s += 8000 + VALUES[m.promo];
+  if (m.promo) s += 8000 + valueOf(m.promo, rules);
   if (m.castle !== undefined) s += 300;
   if (m.drop) s -= 50;
   return s;
@@ -106,7 +114,7 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
     if (qd >= 5) return stand;
     if (stand >= beta) return stand;
     if (stand > alpha) alpha = stand;
-    const caps = legalCaptures(pos, rules).sort((a, b) => orderScore(pos, b) - orderScore(pos, a));
+    const caps = legalCaptures(pos, rules).sort((a, b) => orderScore(pos, b, rules) - orderScore(pos, a, rules));
     let best = stand;
     for (const m of caps) {
       const v = -quies(makeMove(pos, m, rules), -beta, -alpha, ply + 1, qd + 1);
@@ -125,7 +133,7 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
     const moves = legalMoves(pos, rules);
     const o = outcome(pos, rules, moves);
     if (o) return term(o, pos.turn, ply);
-    moves.sort((a, b) => orderScore(pos, b) - orderScore(pos, a));
+    moves.sort((a, b) => orderScore(pos, b, rules) - orderScore(pos, a, rules));
     let best = -INF;
     for (const m of moves) {
       const v = -neg(makeMove(pos, m, rules), depth - 1, -beta, -alpha, ply + 1);
@@ -136,7 +144,7 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
     return best;
   }
 
-  let order = rootMoves.slice().sort((a, b) => orderScore(root, b) - orderScore(root, a));
+  let order = rootMoves.slice().sort((a, b) => orderScore(root, b, rules) - orderScore(root, a, rules));
   let bestMove = order[0];
   const exact = level.noise > 0; // mit Rauschen: jeden Wurzelzug exakt bewerten
   try {
@@ -183,7 +191,8 @@ function placeDuck(after: Pos, rules: Rules, prevDuck: number, level: BotLevel):
         const v = q ? (q.winner === 'draw' ? 0 : q.winner === p2.turn ? MATE : -MATE) : -side(n, rules);
         if (v > worst) worst = v;
       }
-    const near = myK >= 0 ? Math.max(Math.abs(fileOf(d) - fileOf(myK)), Math.abs(rankOf(d) - rankOf(myK))) : 4;
+    const W = after.w;
+    const near = myK >= 0 ? Math.max(Math.abs((d % W) - (myK % W)), Math.abs(Math.floor(d / W) - Math.floor(myK / W))) : 4;
     const v = worst + near + Math.random() * 3;
     if (v < bestV) {
       bestV = v;

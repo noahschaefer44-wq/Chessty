@@ -27,3 +27,37 @@ describe('Perft', () => {
   it('Horde', () => expect(perft(newGame(v('horde')), v('horde'), 3)).toBe(1274));
   it('Königsrennen', () => expect(perft(newGame(v('racingkings')), v('racingkings'), 3)).toBe(11264));
 });
+
+describe('Große und kleine Bretter', () => {
+  it('Capablanca 10×8 (Perft-Referenz)', () => {
+    const r = v('capablanca');
+    const p = newGame(r);
+    expect([p.w, p.h]).toEqual([10, 8]);
+    expect(perft(p, r, 1)).toBe(28);
+    expect(perft(p, r, 2)).toBe(784);
+    expect(perft(p, r, 3)).toBe(25228);
+  });
+  it('Los Alamos 6×6: 10 Startzüge', () => {
+    const r = v('losalamos');
+    expect(perft(newGame(r), r, 1)).toBe(10);
+  });
+  it('Grand 10×10 baut sich auf', () => {
+    const r = v('grand');
+    const p = newGame(r);
+    expect([p.w, p.h]).toEqual([10, 10]);
+    expect(legalMoves(p, r).length).toBeGreaterThan(20);
+  });
+  it('Bauernkrieg: Umwandlung gewinnt', async () => {
+    const { outcome } = await import('../src/variants/engine');
+    const r = { ...v('bauernkrieg'), setup: '8/P7/8/8/8/8/7p/8 w' };
+    const p = newGame(r);
+    const m = legalMoves(p, r).find((x) => x.promo === 'q')!;
+    expect(outcome(makeMove(p, m, r), r)?.winner).toBe('w');
+  });
+  it('Kamel springt (3,1)', () => {
+    const r = { ...BASE_RULES, setup: '8/8/8/8/3L4/8/8/k6K w', castling: false };
+    const p = newGame(r);
+    const from = 3 * 8 + 3;
+    expect(legalMoves(p, r).filter((m) => m.from === from).length).toBe(8);
+  });
+});

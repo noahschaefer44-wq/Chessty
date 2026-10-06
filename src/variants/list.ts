@@ -123,6 +123,81 @@ export const VARIANTS: VariantInfo[] = [
     tip: 'Nutze die Ente zum Blockieren gegnerischer Angriffe auf deinen König – oder um seine Fluchtfelder zu versperren.',
     where: 'Chess.com (Duck Chess), sehr beliebt seit 2022',
   },
+  {
+    rules: v({ id: 'losalamos', name: 'Los Alamos (6×6)', setup: 'rnqknr/pppppp/6/6/PPPPPP/RNQKNR w', castling: false, pawnDouble: false, promo: ['q', 'r', 'n'] }),
+    short: 'Schach auf 6×6 Feldern ohne Läufer – 1956 die erste Schachvariante, die ein Computer gespielt hat.',
+    rules_text: [
+      'Brett 6×6, keine Läufer, keine Rochade, kein Bauern-Doppelschritt, kein en passant.',
+      'Bauern wandeln in Dame, Turm oder Springer um.',
+      'Sonst normale Regeln: Gewonnen wird durch Schachmatt.',
+    ],
+    tip: 'Auf dem kleinen Brett ist alles nah: Schon nach wenigen Zügen greifen Figuren den König an. Rechne jede Drohung durch.',
+    where: 'MANIAC-Computer in Los Alamos, 1956',
+  },
+  {
+    rules: v({ id: 'capablanca', name: 'Capablanca-Schach (10×8)', setup: 'rnhbqkbcnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNHBQKBCNR w', promo: ['q', 'c', 'h', 'r', 'b', 'n'] }),
+    short: 'Ex-Weltmeister Capablancas Idee: breiteres Brett mit Kanzler (Turm + Springer) und Erzbischof (Läufer + Springer).',
+    rules_text: [
+      'Brett 10×8. Neu: Kanzler (Turm + Springer) auf h1 und Erzbischof (Läufer + Springer) auf c1.',
+      'Rochade: Der König zieht drei Felder nach i1 bzw. c1, der Turm springt daneben.',
+      'Bauern wandeln auch in Kanzler oder Erzbischof um.',
+    ],
+    tip: 'Kanzler und Erzbischof sind fast so stark wie eine Dame. Achte auf Springergabeln aus dem Nichts.',
+    where: 'Erfunden von José Raúl Capablanca (1920er), Gothic Chess',
+  },
+  {
+    rules: v({ id: 'grand', name: 'Grand Chess (10×10)', setup: 'r8r/1nbqkchbn1/pppppppppp/10/10/10/10/PPPPPPPPPP/1NBQKCHBN1/R8R w', castling: false, promo: ['q', 'c', 'h', 'r', 'b', 'n'] }),
+    short: 'Großes Brett, große Armee: zehn Bauern, Kanzler, Erzbischof und Türme in den Ecken der Grundreihe.',
+    rules_text: [
+      'Brett 10×10. Die Türme stehen auf der 1. Reihe, alle anderen Figuren eine Reihe davor.',
+      'Keine Rochade. Bauern dürfen aus der Startreihe zwei Felder ziehen.',
+      'Vereinfachung: Umwandlung nur auf der letzten Reihe (im Original schon ab der 8.).',
+    ],
+    tip: 'Die Türme sind von Anfang an aktiv – öffne früh eine Linie für sie.',
+    where: 'Erfunden von Christian Freeling (1984)',
+  },
+  {
+    rules: v({ id: 'bauernkrieg', name: 'Bauernkrieg', setup: '8/pppppppp/8/8/8/8/PPPPPPPP/8 w', kingSafety: false, castling: false, promoteWins: true, noMovesLoses: true }),
+    short: 'Nur Bauern: Wer zuerst die letzte Reihe erreicht, gewinnt. Perfekt, um Bauernendspiele zu verstehen.',
+    rules_text: [
+      'Jede Seite hat nur ihre acht Bauern.',
+      'Wer zuerst einen Bauern auf die letzte Reihe bringt, gewinnt sofort.',
+      'Wer keinen Zug mehr hat oder alle Bauern verliert, verliert.',
+    ],
+    tip: 'Zähle die Tempi! Ein Freibauer, den kein gegnerischer Bauer mehr aufhalten kann, entscheidet. Durchbrüche wie b5/c5 sind der Schlüssel.',
+    where: 'Klassisches Trainingsspiel in Schachschulen',
+  },
+  {
+    rules: v({ id: 'kamel', name: 'Kamelschach', setup: 'rlbqkblr/pppppppp/8/8/8/8/PPPPPPPP/RLBQKBLR w', promo: ['q', 'r', 'b', 'l'] }),
+    short: 'Die Springer werden zu Kamelen: Sie springen drei Felder geradeaus und eins zur Seite.',
+    rules_text: [
+      'Kamele springen (3,1) – wie ein langer Springer. Sie bleiben immer auf derselben Feldfarbe.',
+      'Sonst normale Regeln.',
+    ],
+    tip: 'Kamele erreichen nur die Hälfte der Felder. Stelle wichtige Figuren auf die andere Feldfarbe – dort sind sie vor Kamelen sicher.',
+    where: 'Alte Märchenfigur aus dem persischen Großschach (Tamerlan-Schach)',
+  },
+  {
+    rules: v({ id: 'damenjagd', name: 'Damenjagd', captureWin: 'q' }),
+    short: 'Wer die gegnerische Dame schlägt, gewinnt sofort. Trainiert, die eigene Dame sicher zu halten.',
+    rules_text: [
+      'Normale Regeln – aber wer die Dame des Gegners schlägt, gewinnt sofort.',
+      'Schachmatt gewinnt natürlich auch.',
+    ],
+    tip: 'Ziehe die Dame nicht zu früh heraus und prüfe nach jedem gegnerischen Zug: Kann meine Dame angegriffen werden?',
+    where: 'Trainingsvariante für Einsteiger',
+  },
+  {
+    rules: v({ id: 'material', name: 'Materialschlacht', moveLimit: 20 }),
+    short: 'Nach 20 Zügen gewinnt, wer mehr Material hat. Jeder Schlagzug zählt!',
+    rules_text: [
+      'Normale Regeln, aber nach 20 Zügen je Seite endet die Partie.',
+      'Gewonnen hat, wer dann mehr Material besitzt (Bauer 1, Leichtfigur 3, Turm 5, Dame 9).',
+      'Schachmatt vor dem Limit gewinnt sofort.',
+    ],
+    tip: 'Hängende Figuren entscheiden – aber Vorsicht vor Gegenschlägen. Gegen Ende lohnt es sich, Abtausche zu vermeiden, wenn du vorne liegst.',
+    where: 'Trainingsvariante (Taktikblick)',
+  },
 ];
 
 export const variantById = (id: string) => VARIANTS.find((x) => x.rules.id === id);

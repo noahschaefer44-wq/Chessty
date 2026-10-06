@@ -606,3 +606,13 @@ html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; out
 .plan-check { width: 22px; height: 22px; flex: none; border: var(--line) solid var(--fg); display: grid; place-items: center; font-weight: 700; }
 .plan-list li.done a { color: var(--g5); }
 .plan-list li.done .plan-check { background: var(--fg); color: var(--bg); }
+
+/* Varianten-Werkstatt */
+.daily-variant { margin-bottom: 28px; }
+.daily-variant .vboard { border-color: var(--bg); }
+.palette { display: grid; gap: 6px; }
+.palette-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.palette-piece { border: var(--line) solid var(--g3); background: var(--bg); padding: 2px; cursor: pointer; line-height: 0; transition: transform .15s var(--snap); }
+.palette-piece:hover { transform: translate(-1px, -1px); }
+.palette-piece.on { border-color: var(--fg); box-shadow: 3px 3px 0 var(--fg); }
+.piece-editor { border: var(--line) solid var(--fg); padding: 12px; margin-bottom: 12px; }

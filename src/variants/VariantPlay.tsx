@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAdmin, registerAdminActions } from '../lib/admin';
 import VariantBoard, { PieceSvg } from './VariantBoard';
 import {
-  newGame, legalMoves, makeMove, outcome, duckSquares, inCheck, kingSq, moveText, posKey, colorOf, PIECE_NAMES,
+  newGame, legalMoves, makeMove, outcome, duckSquares, inCheck, kingSq, moveText, posKey, colorOf, pieceName,
   type Color, type Move, type Outcome, type Pos, type Rules,
 } from './engine';
 import { BOTS } from './ai';
@@ -52,7 +52,7 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
 
   function commit(m: Move) {
     const next = makeMove(pos, m, rules);
-    const text = moveText(pos, m);
+    const text = moveText(pos, m, rules);
     const nh = [...hist, { pos, move: m, text }];
     m.drop || !pos.b[m.to] ? sound.move() : sound.capture();
     setHist(nh);
@@ -181,7 +181,7 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
     const vis = new Set<number>();
     pos.b.forEach((p, s) => p && colorOf(p) === human && vis.add(s));
     for (const m of legalMoves({ ...pos, turn: human }, { ...rules, forcedCapture: false })) if (m.from >= 0) vis.add(m.to);
-    return new Set(Array.from({ length: 64 }, (_, s) => s).filter((s) => !vis.has(s)));
+    return new Set(Array.from({ length: pos.b.length }, (_, s) => s).filter((s) => !vis.has(s)));
   }, [pos, rules, human, over, reveal]);
 
   if (level === null) {
@@ -218,13 +218,13 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
   return (
     <div className="trainer">
       <div className="board-col">
-        {rules.drops && <Pocket items={pocket(human === 'w' ? 'b' : 'w')} color={human === 'w' ? 'b' : 'w'} />}
+        {rules.drops && <Pocket items={pocket(human === 'w' ? 'b' : 'w')} color={human === 'w' ? 'b' : 'w'} rules={rules} />}
         <div className={'vboard-wrap' + (thinking ? ' thinking' : '')}>
           <VariantBoard pos={shown} flip={human === 'b'} selected={sel} targets={targets} last={lastSquares}
-            hidden={hidden} check={checkSq} duckMode={!!duckFor} onSquare={onSquare} />
+            hidden={hidden} check={checkSq} duckMode={!!duckFor} onSquare={onSquare} rules={rules} />
         </div>
         {rules.drops && (
-          <Pocket items={pocket(human)} color={human} active={drop} onPick={(t) => { setSel(null); setDrop(drop === t ? null : t); }}
+          <Pocket items={pocket(human)} color={human} rules={rules} active={drop} onPick={(t) => { setSel(null); setDrop(drop === t ? null : t); }}
             disabled={pos.turn !== human || !!over} />
         )}
       </div>
@@ -251,12 +251,12 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
             <div className="panel-head"><b>Umwandeln in …</b></div>
             <div className="panel-body row">
               {promo.map((m) => (
-                <button key={m.promo} className="btn small" onClick={() => play(m)}>{PIECE_NAMES[m.promo!]}</button>
+                <button key={m.promo} className="btn small" onClick={() => play(m)}>{pieceName(m.promo!, rules)}</button>
               ))}
             </div>
           </div>
         )}
-        {hint && !over && <p className="mono muted" style={{ fontSize: 13 }}>Tipp: {moveText(pos, hint)}</p>}
+        {hint && !over && <p className="mono muted" style={{ fontSize: 13 }}>Tipp: {moveText(pos, hint, rules)}</p>}
         <div className="row">
           <button className="btn small" onClick={undo} disabled={!hist.length || thinking}>Zug zurück</button>
           <button className="btn small" onClick={showHint} disabled={pos.turn !== human || !!over || thinking}>Tipp</button>
@@ -283,14 +283,14 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
   );
 }
 
-function Pocket({ items, color, active, onPick, disabled }: { items: [string, number][]; color: Color; active?: string | null; onPick?: (t: string) => void; disabled?: boolean }) {
+function Pocket({ items, color, active, onPick, disabled, rules }: { items: [string, number][]; color: Color; active?: string | null; onPick?: (t: string) => void; disabled?: boolean; rules: Rules }) {
   return (
     <div className="pocket" aria-label="Reserve">
       {items.length === 0 && <span className="mono muted" style={{ fontSize: 12 }}>Reserve leer</span>}
       {items.map(([t, n]) => (
         <button key={t} className={'pocket-piece' + (active === t ? ' on' : '')} disabled={disabled || !onPick} onClick={() => onPick?.(t)}
-          aria-label={`${PIECE_NAMES[t]} einsetzen (${n})`}>
-          <svg viewBox="0 0 1 1" width="34" height="34"><PieceSvg p={color === 'w' ? t.toUpperCase() : t} x={0} y={0} /></svg>
+          aria-label={`${pieceName(t, rules)} einsetzen (${n})`}>
+          <svg viewBox="0 0 1 1" width="34" height="34"><PieceSvg p={color === 'w' ? t.toUpperCase() : t} x={0} y={0} rules={rules} /></svg>
           <span className="mono">{n}</span>
         </button>
       ))}

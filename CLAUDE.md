@@ -16,7 +16,9 @@ Diese Datei ist das Arbeitshandbuch für Claude Code. Optimierungs- und Ausbauli
 ```bash
 npm ci                         # Abhängigkeiten
 npm run dev                    # Vite-Dev-Server (http://localhost:5173)
-npm run typecheck              # tsc -b (TypeScript 7, strikt)
+npm run typecheck              # meta.ts erzeugen + tsc -b (TypeScript 7, strikt)
+npm test                       # Unit-Tests (Vitest): Varianten-Perft, Genauigkeit, Spiegelung, Varianten-Einführungen
+npm run e2e                    # Rauchtest aller Routen (braucht vite preview auf 4173; lokal unter Windows: E2E_CHANNEL=msedge)
 npm run build                  # tsc -b && vite build → dist/
 npx vite preview --port 4173   # gebautes dist/ ausliefern (für Browser-Tests)
 npm run validate               # ALLE Lektionen/Meisterpartien/Endspiel-Praxis mit Stockfish prüfen (dauert Minuten; exit 1 bei Fehlern)
@@ -35,7 +37,7 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
   - `src/components/` – Board (Chessground + Pfeile + Tastatur-Zugeingabe), MiniBoard (statisches SVG-Diagramm), Explain (3 Erklärtiefen, `Rich` = **fett**-Markdown), WrongMovePanel, AdminPanel, ErrorBoundary.
   - `src/content/` – alle Lerninhalte als TypeScript-Daten (siehe unten).
   - `src/lib/` – Logik: `progress.ts` (lokaler Fortschritt, XP/Serie/Herzen/Abzeichen via `useSyncExternalStore`, Key `chessty.progress.v1`), `game.ts` (Abzeichen, Tagesquests), `cloud.ts` (Supabase-RPCs), `accuracy.ts` (Lichess-Genauigkeitsformel), `explainMove.ts`/`wrongMove.ts` (Zugbewertung + Erklärungen), `puzzles.ts`, `openings.ts`, `tablebase.ts`, `admin.ts`, `forceMove.ts`.
-  - `src/variants/` – eigene Regel-Engine für Schachvarianten (`engine.ts`, Felder 0=a1…63=h8), KI (`ai.ts`, Alpha-Beta + Ruhesuche, läuft in `ai.worker.ts`), 10 Varianten (`list.ts`), SVG-Brett, Regel-Assistent (`assistant.ts`).
+  - `src/variants/` – eigene Regel-Engine für Schachvarianten (`engine.ts`, beliebige Brettgröße: Feld = Reihe·Breite + Linie, Maße in `pos.w/pos.h`; Figuren-Gangarten in `BUILTIN` bzw. `rules.pieces`), KI (`ai.ts`, Alpha-Beta + Ruhesuche, läuft in `ai.worker.ts`), 10 Varianten (`list.ts`), SVG-Brett, Regel-Assistent (`assistant.ts`).
   - `public/data/` – `puzzles.json` (Lichess-Puzzle-Auszug, 30 Motive × 4 Stärken), `openings.json` (Lichess chess-openings, Namen in `src/lib/openingsDe.ts` übersetzt).
   - `scripts/` – Prüf- und Datenskripte; `data-src/` – Rohdaten für Puzzles/Meisterpartien.
   - `supabase/migrations/` – exaktes SQL des Servers (Stand der Live-Datenbank).
@@ -43,6 +45,9 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
 ## Inhalte bearbeiten
 - **Lektion**: Typ `Lesson` in `src/content/types.ts`. Lektionen liegen nach Kategorie in `src/content/lessons/*.ts` und werden in `src/content/index.ts` gesammelt. Schritte: `info` (Text + Pfeile) oder `move` (Aufgabe mit `solution` in SAN, erster = Hauptlösung; `mistakes` mit eigener Erklärung; `reply` = Gegenzug). Erklärungen immer als `{ short, why?, pro? }`.
 - **Pfeil-Kurzschrift**: `"e2e4"` Pfeil, `"e4"` Kreis, `"!e2e4"` Fehler (grau gestrichelt), `"?e2e4"` Alternative.
+- **Lektions-Übersicht**: `src/content/meta.ts` wird bei build/typecheck automatisch aus allen Lektionen erzeugt – nicht von Hand bearbeiten. Startseite/Lernpfad nutzen nur diese Übersicht.
+- **Praxisteil**: Zuordnung Lektion → Puzzle-Motive/Ausspielen in `src/content/practicePlan.ts` (oder Feld `practice` in der Lektion).
+- **Eröffnungsfallen**: Daten in `src/content/traps.ts`; daraus entstehen je zwei Lektionen (`f-<id>` stellen, `fa-<id>` vermeiden).
 - **Danach immer** `npm run validate -- <id>`: Der Validator prüft Legalität, dass Lösungen laut Stockfish gut und `mistakes` wirklich schlecht sind (`soft: true` für prinzipielle Fehler mit kleinem Engine-Unterschied) und Endspiele gegen die Tablebase.
 - **Meisterpartien**: `src/content/masters.ts` (Texte) + `masters-moves.ts` (Züge). **Glossar**: `glossary.ts` + `glossaryFen.ts`. **Wissen**: `knowledge.ts`. **Endspiel-Praxis**: `practice.ts`. **Taktik-Motive**: `themes.ts`.
 - Nur eigene Texte schreiben; Partienotationen sind gemeinfrei, Kommentare aus Büchern nicht.
