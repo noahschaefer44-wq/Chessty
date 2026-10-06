@@ -8,6 +8,7 @@ const ICON: Record<string, string> = {
   taktik: '⚔',
   strategie: '♜',
   eroeffnungen: '♞',
+  fallen: '⚠',
   endspiele: '♔',
 };
 

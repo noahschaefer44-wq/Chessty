@@ -2,6 +2,7 @@ import { lessons } from '../content';
 import { LEVELS } from '../content/types';
 import { useProgress, update } from '../lib/progress';
 import { Stars } from '../components/Widgets';
+import { TRAPS } from '../content/traps';
 
 export default function Openings() {
   const p = useProgress();
@@ -26,8 +27,33 @@ export default function Openings() {
             <a className="btn primary" href="#/eroeffnungen/repertoire">Mein Repertoire trainieren ({p.repertoire.length})</a>
           )}
         </div>
+        <div className="row">
+          <a className="btn" href="#/training/fallen">Fallen-Trainer <span className="arrow">→</span></a>
+          <a className="btn ghost" href="#/eroeffnungen/fallen">Alle Fallen als Lernpfad</a>
+        </div>
         <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>Tipp: Markiere mit ☆ die Eröffnungen, die du spielst – daraus wird dein persönliches Repertoire-Training.</p>
       </div>
+      <section style={{ marginTop: 30 }}>
+        <div className="path-head"><h2 style={{ margin: 0 }}>Fallen – stellen und vermeiden</h2></div>
+        <p className="muted">Die berühmtesten Eröffnungsfallen, besonders häufig bis etwa 1500 Elo. Jede Falle zweimal: einmal schnappst du zu, einmal fällst du nicht herein.</p>
+        <div className="grid wide">
+          {TRAPS.map((t) => (
+            <div className="card flat" key={t.id}>
+              <div className="kicker" style={{ margin: 0 }}>{LEVELS[t.level]} · {t.opening}</div>
+              <h3>{t.name}</h3>
+              <p className="muted" style={{ fontSize: 14 }}>{t.intro.short}</p>
+              <div className="row">
+                <a className="btn small primary" href={'#/lektion/f-' + t.id}>
+                  {p.lessons['f-' + t.id]?.done ? '✓ ' : ''}Stellen & bestrafen ({t.trapper === 'white' ? 'Weiß' : 'Schwarz'})
+                </a>
+                <a className="btn small" href={'#/lektion/fa-' + t.id}>
+                  {p.lessons['fa-' + t.id]?.done ? '✓ ' : ''}Erkennen & vermeiden
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
       {groups.map(([name, f]) => {
         const list = ops.filter((l) => f(l.drill?.[0]?.moves[0] ?? ''));
         if (!list.length) return null;

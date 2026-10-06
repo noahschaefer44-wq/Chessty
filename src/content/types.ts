@@ -6,12 +6,13 @@ export const LEVELS: Record<Level, string> = {
   4: 'Meister',
 };
 
-export type Category = 'grundlagen' | 'taktik' | 'strategie' | 'eroeffnungen' | 'endspiele';
+export type Category = 'grundlagen' | 'taktik' | 'strategie' | 'eroeffnungen' | 'fallen' | 'endspiele';
 export const CATEGORIES: { id: Category; name: string; blurb: string }[] = [
   { id: 'grundlagen', name: 'Grundlagen', blurb: 'Regeln, Figuren, Mattbilder, erste Prinzipien' },
   { id: 'taktik', name: 'Taktik', blurb: 'Gabel, Fesselung, Opfer – Motive erkennen und berechnen' },
   { id: 'strategie', name: 'Strategie', blurb: 'Bauernstrukturen, Figurenqualität, Pläne' },
   { id: 'eroeffnungen', name: 'Eröffnungen', blurb: 'Ideen, Hauptvarianten, Fallen, typische Fehler' },
+  { id: 'fallen', name: 'Eröffnungsfallen', blurb: 'Berühmte Fallen stellen, bestrafen – und selbst nie hineintappen' },
   { id: 'endspiele', name: 'Endspiele', blurb: 'Grundmatts, Bauern- und Turmendspiele' },
 ];
 

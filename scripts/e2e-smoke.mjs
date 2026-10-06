@@ -7,7 +7,7 @@ const ROUTES = [
   '', 'lernen/grundlagen', 'lernen/eroeffnungen', 'lektion/figuren-wert', 'taktik', 'eroeffnungen', 'eroeffnungen/explorer',
   'eroeffnungen/repertoire', 'eroeffnungen/fallen', 'endspiele', 'meister', 'training', 'training/koordinaten', 'training/fallen', 'spielen',
   'varianten', 'varianten/werkstatt', 'analyse', 'fehlerheft', 'begriffe', 'wissen', 'editor', 'tagespuzzle',
-  'einstufung', 'profil', 'rechtliches', 'mehr', 'plan', 'coach', 'praxis/t-gabel', 'praxis/o-italienisch', 'praxis/e-lucena',
+  'einstufung', 'profil', 'rechtliches', 'mehr', 'plan', 'coach', 'praxis/t-gabel', 'praxis/o-italienisch', 'praxis/e-lucena', 'lektion/f-legal', 'lektion/fa-noah', 'lernen/fallen',
 ];
 
 const browser = await chromium.launch(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {});

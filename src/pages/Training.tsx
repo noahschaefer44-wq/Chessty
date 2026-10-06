@@ -10,6 +10,7 @@ const TRAINERS = [
   { id: 'kandidaten', path: 'kandidaten', name: 'Kandidatenzüge', text: 'Drei Kandidaten wählen, dann zeigt die Engine, ob der beste dabei war.', kicker: 'Denkmethode' },
   { id: 'rechnen-2', path: 'rechnen', name: 'Rechnen', text: 'Züge nur im Kopf ausführen und dann weiterspielen.', kicker: 'Berechnung' },
   { id: 'bewertung', path: 'bewertung', name: 'Bewertung schätzen', text: 'Wer steht besser? Vergleiche deine Einschätzung mit Stockfish.', kicker: 'Positionsgefühl' },
+  { id: 'fallen', path: 'fallen', name: 'Fallen erkennen', text: 'Eröffnungsfallen bestrafen – oder selbst nicht hineintappen.', kicker: 'Eröffnungen' },
   { id: 'raten', path: 'raten', name: 'Rate den Meisterzug', text: 'Spiele Fischer, Tal & Co. Zug für Zug – mit Punkten.', kicker: 'Meisterpartien' },
 ];
 

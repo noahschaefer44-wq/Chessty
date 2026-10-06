@@ -332,6 +332,174 @@ export const LESSON_META: LessonMeta[] = [
   "summary": "1…f5 gegen 1.d4: Kontrolle über e4 und Königsangriff – ein unausgeglichener Kampf."
  },
  {
+  "id": "f-legal",
+  "title": "Légal-Matt: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Philidor-Verteidigung: Schwarz fesselt den Springer f3 an die Dame. Weiß schlägt trotzdem auf e5 – und „opfert“ die Dame."
+ },
+ {
+  "id": "fa-legal",
+  "title": "Légal-Matt: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Philidor-Verteidigung sicher weiterspielst."
+ },
+ {
+  "id": "f-blackburne",
+  "title": "Blackburne-Shilling-Falle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Italienische Partie: Schwarz stellt mit 3…Sd4 einen „vergessenen“ Bauern e5 hin. Wer gierig schlägt, erlebt eine böse Überraschung."
+ },
+ {
+  "id": "fa-blackburne",
+  "title": "Blackburne-Shilling-Falle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Italienische Partie sicher weiterspielst."
+ },
+ {
+  "id": "f-caro",
+  "title": "Ersticktes Matt im Caro-Kann: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Caro-Kann-Verteidigung: Weiß stellt die Dame nach e2 – auf dieselbe Linie wie den schwarzen König. Ein natürlicher Entwicklungszug von Schwarz verliert sofort."
+ },
+ {
+  "id": "fa-caro",
+  "title": "Ersticktes Matt im Caro-Kann: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Caro-Kann-Verteidigung sicher weiterspielst."
+ },
+ {
+  "id": "f-petrow",
+  "title": "Petrow-Falle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Russische Verteidigung (Petrow): Im Petrow spiegelt Schwarz oft einfach die weißen Züge: 3…Sxe4?. Nach 4.De2! steht die Dame dem König gegenüber."
+ },
+ {
+  "id": "fa-petrow",
+  "title": "Petrow-Falle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Russische Verteidigung (Petrow) sicher weiterspielst."
+ },
+ {
+  "id": "f-stafford",
+  "title": "Stafford-Gambit: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Russische Verteidigung (Stafford-Gambit): Das Stafford-Gambit ist im Internet berüchtigt: Schwarz opfert einen Bauern für schnelle Entwicklung – und hofft auf natürliche, aber falsche Züge."
+ },
+ {
+  "id": "fa-stafford",
+  "title": "Stafford-Gambit: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Russische Verteidigung (Stafford-Gambit) sicher weiterspielst."
+ },
+ {
+  "id": "f-englund",
+  "title": "Englund-Gambit-Falle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Englund-Gambit: Das Englund-Gambit ist objektiv schlecht – aber es hat eine fiese Falle: Die schwarze Dame frisst sich durch den Damenflügel."
+ },
+ {
+  "id": "fa-englund",
+  "title": "Englund-Gambit-Falle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 1,
+  "summary": "Fall nicht herein: Wie du in der Englund-Gambit sicher weiterspielst."
+ },
+ {
+  "id": "f-fegatello",
+  "title": "Fegatello (gebratene Leber): stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Zweispringerspiel: Weiß greift mit Sg5 den Punkt f7 an. Nach 4…d5 5.exd5 schlägt Schwarz oft natürlich mit dem Springer zurück …"
+ },
+ {
+  "id": "fa-fegatello",
+  "title": "Fegatello (gebratene Leber): erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Zweispringerspiel sicher weiterspielst."
+ },
+ {
+  "id": "f-elefant",
+  "title": "Elefantenfalle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Abgelehntes Damengambit: Der Springer f6 scheint gefesselt: Schlägt Weiß auf d5, darf Schwarz angeblich nicht zurückschlagen, weil die Dame d8 hängt …"
+ },
+ {
+  "id": "fa-elefant",
+  "title": "Elefantenfalle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Abgelehntes Damengambit sicher weiterspielst."
+ },
+ {
+  "id": "f-lasker",
+  "title": "Lasker-Falle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Albins Gegengambit: Im Albin-Gegengambit stößt Schwarz den Bauern bis e3 vor. Nimmt Weiß den Läufer b4, verwandelt sich der Bauer – in einen Springer!"
+ },
+ {
+  "id": "fa-lasker",
+  "title": "Lasker-Falle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Albins Gegengambit sicher weiterspielst."
+ },
+ {
+  "id": "f-budapest",
+  "title": "Budapester Matt: stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Budapester Gambit: Schwarz greift den Bauern e5 an. Weiß jagt den Läufer mit a3 – und wenn Weiß ihn nimmt, folgt ein ersticktes Matt."
+ },
+ {
+  "id": "fa-budapest",
+  "title": "Budapester Matt: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Budapester Gambit sicher weiterspielst."
+ },
+ {
+  "id": "f-noah",
+  "title": "Noahs Arche: stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Spanische Partie: Der weiße Läufer b3 hat wenig Platz. Schlägt Weiß mit der Dame auf d4, sperren die schwarzen Bauern den Läufer ein."
+ },
+ {
+  "id": "fa-noah",
+  "title": "Noahs Arche: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Spanische Partie sicher weiterspielst."
+ },
+ {
+  "id": "f-sibirisch",
+  "title": "Sibirische Falle: stellen & bestrafen",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Sizilianisch (Morra-Gambit): Im Morra-Gambit droht Schwarz mit Sg4 und Dc7 Matt auf h2. Der „natürliche“ Abwehrzug h3 verliert."
+ },
+ {
+  "id": "fa-sibirisch",
+  "title": "Sibirische Falle: erkennen & vermeiden",
+  "category": "fallen",
+  "level": 2,
+  "summary": "Fall nicht herein: Wie du in der Sizilianisch (Morra-Gambit) sicher weiterspielst."
+ },
+ {
   "id": "e-dame-matt",
   "title": "Matt mit Dame und König",
   "category": "endspiele",

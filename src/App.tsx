@@ -38,6 +38,7 @@ const Candidates = lazy(() => import('./pages/trainers/Candidates'));
 const EvalGuess = lazy(() => import('./pages/trainers/EvalGuess'));
 const Rebuild = lazy(() => import('./pages/trainers/Rebuild'));
 const GuessMove = lazy(() => import('./pages/trainers/GuessMove'));
+const Traps = lazy(() => import('./pages/trainers/Traps'));
 const RepertoireDrill = lazy(() => import('./pages/RepertoireDrill'));
 const Knowledge = lazy(() => import('./pages/Knowledge'));
 const Community = lazy(() => import('./pages/Community'));
@@ -99,6 +100,7 @@ function page(r: string[]) {
       if (r[1] === 'training') return <OpeningDrill id={r[2]} line={Number(r[3] ?? 0)} />;
       if (r[1] === 'explorer') return <Explorer />;
       if (r[1] === 'repertoire') return <RepertoireDrill />;
+      if (r[1] === 'fallen') return <Learn category="fallen" />;
       return <Openings />;
     case 'endspiele':
       return r[1] === 'praxis' ? <EndgamePractice id={r[2]} /> : <Endgames />;
@@ -122,6 +124,7 @@ function page(r: string[]) {
         case 'bewertung': return <EvalGuess />;
         case 'nachbauen': return <Rebuild />;
         case 'raten': return <GuessMove />;
+        case 'fallen': return <Traps />;
         default: return <Training />;
       }
     case 'rechtliches':

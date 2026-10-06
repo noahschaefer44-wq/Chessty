@@ -9,6 +9,7 @@ import { eroeffnungen2 } from './lessons/eroeffnungen2';
 import { endspiele } from './lessons/endspiele';
 import { endspiele2 } from './lessons/endspiele2';
 import { MASTERS } from './masters';
+import { fallen } from './traps';
 
 const byLevel = (a: Lesson, b: Lesson) => a.level - b.level;
 
@@ -17,6 +18,7 @@ export const lessons: Lesson[] = [
   ...[...taktik, ...taktik2].sort(byLevel),
   ...[...strategie, ...strategie2].sort(byLevel),
   ...[...eroeffnungen, ...eroeffnungen2].sort(byLevel),
+  ...fallen.sort(byLevel),
   ...[...endspiele, ...endspiele2].sort(byLevel),
 ];
 export const masters: MasterGame[] = MASTERS;
