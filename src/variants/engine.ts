@@ -66,6 +66,8 @@ export interface Rules {
   moveLimit?: number;
   /** Wer keinen Zug mehr hat, verliert (z. B. im Bauernkrieg) */
   noMovesLoses?: boolean;
+  /** Doppelzug (Marseille): zwei Züge pro Runde, der allererste Zug von Weiß ist einfach; ein Schach beendet die Runde */
+  doubleMove?: boolean;
 }
 
 export interface Pos {
@@ -85,6 +87,10 @@ export interface Pos {
   half: number;
   ply: number;
   duck: number;
+  /** Gesperrte Felder („Löcher“, in der FEN als *) */
+  holes?: number[];
+  /** Doppelzug: 1 = zweiter Zug derselben Seite steht an */
+  sub?: number;
 }
 
 export interface Outcome {
@@ -249,7 +255,7 @@ export function fen960(seed = Math.floor(Math.random() * 960)): string {
 /** Eine FEN-Reihe in Felder zerlegen (mehrstellige Zahlen erlaubt, z. B. „10“) */
 function rowCells(row: string): (string | null)[] {
   const out: (string | null)[] = [];
-  for (const tok of row.match(/\d+|[a-zA-Z]/g) ?? []) {
+  for (const tok of row.match(/\d+|[a-zA-Z*]/g) ?? []) {
     if (/\d/.test(tok)) for (let i = 0; i < Number(tok); i++) out.push(null);
     else out.push(tok);
   }
@@ -268,9 +274,12 @@ export function parseSetup(setup: string, rules: Rules): Pos {
   const rows = boardPart.split('/');
   const { w, h } = setupSize(fen);
   const b: (string | null)[] = Array(w * h).fill(null);
+  const holes: number[] = [];
   rows.forEach((row, i) => {
     rowCells(row).forEach((ch, f) => {
-      if (ch && f < w) b[(h - 1 - i) * w + f] = ch;
+      if (!ch || f >= w) return;
+      if (ch === '*') holes.push((h - 1 - i) * w + f);
+      else b[(h - 1 - i) * w + f] = ch;
     });
   });
   const pos: Pos = {
@@ -287,6 +296,7 @@ export function parseSetup(setup: string, rules: Rules): Pos {
     half: 0,
     ply: 0,
     duck: -1,
+    ...(holes.length ? { holes } : {}),
   };
   if (rules.captureWin) pos.hadTarget = { w: b.includes(rules.captureWin.toUpperCase()), b: b.includes(rules.captureWin) };
   if (rules.castling && !rules.antichess) {
@@ -316,7 +326,8 @@ export function kingSq(pos: Pos, c: Color): number {
   return pos.b.indexOf(K);
 }
 
-const blocked = (pos: Pos, s: number) => pos.b[s] !== null || s === pos.duck;
+const isHole = (pos: Pos, s: number) => !!pos.holes && pos.holes.includes(s);
+const blocked = (pos: Pos, s: number) => pos.b[s] !== null || s === pos.duck || isHole(pos, s);
 
 /** Wird Feld s von Farbe `by` angegriffen? */
 export function attacked(pos: Pos, s: number, by: Color, rules: Rules): boolean {
@@ -341,7 +352,7 @@ export function attacked(pos: Pos, s: number, by: Color, rules: Rules): boolean 
     let t = step(pos, s, -S.df, -S.dr * sg);
     let dist = 1;
     while (t >= 0) {
-      if (t === pos.duck) break;
+      if (t === pos.duck || isHole(pos, t)) break;
       const p = b[t];
       if (p) {
         if (colorOf(p) === by) {
@@ -407,7 +418,7 @@ function pseudo(pos: Pos, rules: Rules): Move[] {
       }
       for (const df of [-1, 1]) {
         const c = step(pos, s, df, sg);
-        if (c < 0 || c === pos.duck) continue;
+        if (c < 0 || c === pos.duck || isHole(pos, c)) continue;
         if ((b[c] && colorOf(b[c]!) !== me) || (c === pos.ep && !b[c])) addPawn(s, c);
       }
       continue;
@@ -415,7 +426,7 @@ function pseudo(pos: Pos, rules: Rules): Move[] {
     const mv = tb.movers[t];
     if (!mv) continue;
     const target = (to: number) => {
-      if (to < 0 || to === pos.duck) return;
+      if (to < 0 || to === pos.duck || isHole(pos, to)) return;
       const q = b[to];
       if (q && colorOf(q) === me) return;
       if (q && rules.atomic && t === 'k') return; // König darf im Atomschach nicht schlagen
@@ -425,7 +436,7 @@ function pseudo(pos: Pos, rules: Rules): Move[] {
     for (const sl of mv.slides) {
       let to = step(pos, s, sl.df, sl.dr * sg);
       let n = 1;
-      while (to >= 0 && to !== pos.duck && n <= sl.range) {
+      while (to >= 0 && to !== pos.duck && !isHole(pos, to) && n <= sl.range) {
         const q = b[to];
         if (q) {
           if (colorOf(q) !== me && !(rules.atomic && t === 'k')) out.push({ from: s, to });
@@ -561,7 +572,17 @@ export function makeMove(pos: Pos, m: Move, rules: Rules): Pos {
     ply: pos.ply + 1,
     duck: m.duck !== undefined ? m.duck : pos.duck,
   };
-  if (rules.checksToWin && inCheck(next, them, rules)) next.checks[me]++;
+  const check = inCheck(next, them, rules);
+  if (rules.checksToWin && check) next.checks[me]++;
+  if (rules.doubleMove) {
+    // Erster Zug der Partie einfach, sonst zwei Züge – außer der erste Zug gibt Schach
+    const second = (pos.sub ?? 0) === 0 && pos.ply > 0 && !check;
+    next.sub = second ? 1 : 0;
+    if (second) {
+      next.turn = me;
+      next.ep = -1;
+    }
+  }
   return next;
 }
 
@@ -609,7 +630,7 @@ export function legalCaptures(pos: Pos, rules: Rules): Move[] {
 /** Leere Felder, auf die die Ente gesetzt werden darf (nach dem Figurenzug) */
 export function duckSquares(pos: Pos, prevDuck: number): number[] {
   const out: number[] = [];
-  for (let s = 0; s < pos.b.length; s++) if (!pos.b[s] && s !== prevDuck) out.push(s);
+  for (let s = 0; s < pos.b.length; s++) if (!pos.b[s] && s !== prevDuck && !isHole(pos, s)) out.push(s);
   return out;
 }
 
@@ -698,7 +719,7 @@ export function outcome(pos: Pos, rules: Rules, moves = legalMoves(pos, rules)):
 }
 
 export function posKey(pos: Pos): string {
-  return pos.b.map((p) => p ?? '.').join('') + pos.turn + pos.duck + JSON.stringify(pos.pockets) + pos.castle.w.join() + '|' + pos.castle.b.join() + pos.ep;
+  return pos.b.map((p) => p ?? '.').join('') + pos.turn + (pos.sub ?? 0) + pos.duck + JSON.stringify(pos.pockets) + pos.castle.w.join() + '|' + pos.castle.b.join() + pos.ep;
 }
 
 const DE: Record<string, string> = { n: 'S', b: 'L', r: 'T', q: 'D', k: 'K', a: 'A', c: 'C', h: 'E', p: '' };

@@ -310,7 +310,7 @@ export function BotPicker({ onStart }: { onStart: (level: number, color: Color |
       <div className="bot-grid">
         {BOTS.map((b) => (
           <button key={b.id} className="card bot-card" onClick={() => onStart(b.id, color)}>
-            <span className="mono" style={{ fontSize: 12 }}>Stufe {b.id + 1}/5</span>
+            <span className="mono" style={{ fontSize: 12 }}>Stufe {b.id + 1}/{BOTS.length}</span>
             <b>{b.name}</b>
             <span className="muted" style={{ fontSize: 13 }}>{b.desc}</span>
           </button>

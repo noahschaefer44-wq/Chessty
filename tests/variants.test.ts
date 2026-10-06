@@ -61,3 +61,26 @@ describe('Große und kleine Bretter', () => {
     expect(legalMoves(p, r).filter((m) => m.from === from).length).toBe(8);
   });
 });
+
+describe('Doppelzug und Löcher', () => {
+  it('Marseille: erster Zug einfach, danach zwei Züge', () => {
+    const r = v('marseille');
+    let p = newGame(r);
+    const mv = (from: string, to: string) => legalMoves(p, r).find((m) => m.from === sq(from) && m.to === sq(to))!;
+    p = makeMove(p, mv('e2', 'e4'), r);
+    expect(p.turn).toBe('b');
+    p = makeMove(p, mv('e7', 'e5'), r);
+    expect(p.turn).toBe('b');
+    p = makeMove(p, mv('d7', 'd5'), r);
+    expect(p.turn).toBe('w');
+  });
+  it('Löcher sperren Felder und Linien', () => {
+    const r = { ...BASE_RULES, setup: '4k3/8/8/8/2*5/8/B7/4K3 w', castling: false };
+    const p = newGame(r);
+    const targets = legalMoves(p, r).filter((m) => m.from === sq('a2')).map((m) => m.to);
+    expect(targets).toContain(sq('b3'));
+    expect(targets).not.toContain(sq('c4'));
+    expect(targets).not.toContain(sq('d5'));
+  });
+});
+const sq = (n: string) => n.charCodeAt(0) - 97 + (Number(n.slice(1)) - 1) * 8;

@@ -1,7 +1,7 @@
 // Einfache, aber variantenfähige Schach-KI: Alpha-Beta mit Ruhesuche und Varianten-Bewertung.
 import {
   valueOf, colorOf, hillSquares, kingSq, isCapture, legalMoves, legalCaptures, makeMove,
-  outcome, quickOutcome, duckSquares, type Move, type Pos, type Rules, type Outcome, type Color,
+  outcome, quickOutcome, duckSquares, posKey, sameMove, type Move, type Pos, type Rules, type Outcome, type Color,
 } from './engine';
 
 export interface BotLevel {
@@ -19,7 +19,8 @@ export const BOTS: BotLevel[] = [
   { id: 1, name: 'Lehrling', desc: 'Schlägt, was hängt – übersieht aber viel.', depth: 2, ms: 600, noise: 70, random: 0.08 },
   { id: 2, name: 'Vereinsspieler', desc: 'Rechnet drei Halbzüge und spielt solide.', depth: 3, ms: 1200, noise: 20, random: 0 },
   { id: 3, name: 'Experte', desc: 'Sucht tiefer und nutzt die Varianten-Ziele.', depth: 5, ms: 2000, noise: 0, random: 0 },
-  { id: 4, name: 'Meister', desc: 'Die stärkste Stufe – rechnet so tief, wie die Zeit reicht.', depth: 9, ms: 3500, noise: 0, random: 0 },
+  { id: 4, name: 'Meister', desc: 'Rechnet so tief, wie die Zeit reicht.', depth: 9, ms: 3500, noise: 0, random: 0 },
+  { id: 5, name: 'Großmeister', desc: 'Die stärkste Stufe: doppelte Bedenkzeit, merkt sich alle berechneten Stellungen.', depth: 14, ms: 7000, noise: 0, random: 0 },
 ];
 
 const MATE = 1_000_000;
@@ -102,6 +103,14 @@ function orderScore(pos: Pos, m: Move, rules: Rules): number {
 function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Move {
   const deadline = Date.now() + level.ms;
   let nodes = 0;
+  // Transpositionstabelle (bereits berechnete Stellungen) und Killerzüge (gute ruhige Züge je Tiefe)
+  const tt = new Map<string, { depth: number; value: number; flag: 0 | 1 | 2; best?: Move }>();
+  const killers: (Move | undefined)[][] = [];
+  const sortMoves = (pos: Pos, ms: Move[], ply: number, hash?: Move) =>
+    ms.sort((a, b) => {
+      const s = (m: Move) => (hash && sameMove(m, hash) ? 1e9 : 0) + orderScore(pos, m, rules) + (killers[ply]?.some((k) => k && sameMove(k, m)) ? 5000 : 0);
+      return s(b) - s(a);
+    });
   const tick = () => {
     if ((++nodes & 511) === 0 && Date.now() > deadline) throw new Timeout();
   };
@@ -117,7 +126,8 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
     const caps = legalCaptures(pos, rules).sort((a, b) => orderScore(pos, b, rules) - orderScore(pos, a, rules));
     let best = stand;
     for (const m of caps) {
-      const v = -quies(makeMove(pos, m, rules), -beta, -alpha, ply + 1, qd + 1);
+      const n = makeMove(pos, m, rules);
+      const v = n.turn === pos.turn ? quies(n, alpha, beta, ply + 1, qd + 1) : -quies(n, -beta, -alpha, ply + 1, qd + 1);
       if (v > best) best = v;
       if (v > alpha) alpha = v;
       if (alpha >= beta) break;
@@ -130,17 +140,35 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
     const q = quickOutcome(pos, rules);
     if (q) return term(q, pos.turn, ply);
     if (depth <= 0) return quies(pos, alpha, beta, ply, 0);
+    const key = posKey(pos);
+    const hit = tt.get(key);
+    const a0 = alpha;
+    if (hit && hit.depth >= depth) {
+      if (hit.flag === 0) return hit.value;
+      if (hit.flag === 1 && hit.value >= beta) return hit.value;
+      if (hit.flag === 2 && hit.value <= alpha) return hit.value;
+    }
     const moves = legalMoves(pos, rules);
     const o = outcome(pos, rules, moves);
     if (o) return term(o, pos.turn, ply);
-    moves.sort((a, b) => orderScore(pos, b, rules) - orderScore(pos, a, rules));
+    sortMoves(pos, moves, ply, hit?.best);
     let best = -INF;
+    let bestM: Move | undefined;
     for (const m of moves) {
-      const v = -neg(makeMove(pos, m, rules), depth - 1, -beta, -alpha, ply + 1);
-      if (v > best) best = v;
+      const n = makeMove(pos, m, rules);
+      const v = n.turn === pos.turn ? neg(n, depth - 1, alpha, beta, ply + 1) : -neg(n, depth - 1, -beta, -alpha, ply + 1);
+      if (v > best) {
+        best = v;
+        bestM = m;
+      }
       if (v > alpha) alpha = v;
-      if (alpha >= beta) break;
+      if (alpha >= beta) {
+        if (!isCapture(pos, m)) killers[ply] = [m, killers[ply]?.[0]];
+        break;
+      }
     }
+    if (tt.size > 400_000) tt.clear();
+    tt.set(key, { depth, value: best, flag: best <= a0 ? 2 : best >= beta ? 1 : 0, best: bestM });
     return best;
   }
 
@@ -152,7 +180,9 @@ function search(root: Pos, rules: Rules, level: BotLevel, rootMoves: Move[]): Mo
       const scored: { m: Move; v: number }[] = [];
       let alpha = -INF;
       for (const m of order) {
-        const v = -neg(makeMove(root, m, rules), d - 1, -INF, exact ? INF : -alpha, 1) + (level.noise ? (Math.random() - 0.5) * 2 * level.noise : 0);
+        const n = makeMove(root, m, rules);
+        const raw = n.turn === root.turn ? neg(n, d - 1, exact ? -INF : alpha, INF, 1) : -neg(n, d - 1, -INF, exact ? INF : -alpha, 1);
+        const v = raw + (level.noise ? (Math.random() - 0.5) * 2 * level.noise : 0);
         scored.push({ m, v });
         if (v > alpha) alpha = v;
       }

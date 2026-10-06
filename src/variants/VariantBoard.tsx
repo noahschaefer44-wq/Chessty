@@ -72,6 +72,15 @@ export default function VariantBoard({
         const dark = (fileOf(s) + rankOf(s)) % 2 === 0;
         return <rect key={s} x={x} y={y} width="1" height="1" fill={dark ? 'var(--sq-dark)' : 'var(--sq-light)'} />;
       })}
+      {pos.holes?.map((s) => {
+        const { x, y } = xy(s);
+        return (
+          <g key={'h' + s}>
+            <rect x={x} y={y} width="1" height="1" fill="var(--fg)" />
+            <rect x={x + 0.18} y={y + 0.18} width="0.64" height="0.64" fill="none" stroke="var(--bg)" strokeWidth="0.04" strokeDasharray="0.08 0.06" />
+          </g>
+        );
+      })}
       {last && last.filter((s) => s >= 0).map((s) => {
         const { x, y } = xy(s);
         return <rect key={'l' + s} x={x} y={y} width="1" height="1" fill="rgba(0,0,0,.18)" />;
@@ -129,7 +138,7 @@ export default function VariantBoard({
         cells.map((s) => {
           const { x, y } = xy(s);
           const p = pos.b[s];
-          const label = `${sqName(s, W)}${p && !hidden?.has(s) ? ' ' + (p === p.toUpperCase() ? 'weiß: ' : 'schwarz: ') + pieceName(p.toLowerCase(), rules) : ''}${targets.includes(s) ? ', Ziel' : ''}`;
+          const label = pos.holes?.includes(s) ? `${sqName(s, W)}, Loch` : `${sqName(s, W)}${p && !hidden?.has(s) ? ' ' + (p === p.toUpperCase() ? 'weiß: ' : 'schwarz: ') + pieceName(p.toLowerCase(), rules) : ''}${targets.includes(s) ? ', Ziel' : ''}`;
           return (
             <rect key={'k' + s} className="sq-hit" x={x} y={y} width="1" height="1" fill="transparent" onClick={() => onSquare(s)}
               tabIndex={0} role="button" aria-label={label}

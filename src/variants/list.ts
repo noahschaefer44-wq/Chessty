@@ -198,6 +198,38 @@ export const VARIANTS: VariantInfo[] = [
     tip: 'Hängende Figuren entscheiden – aber Vorsicht vor Gegenschlägen. Gegen Ende lohnt es sich, Abtausche zu vermeiden, wenn du vorne liegst.',
     where: 'Trainingsvariante (Taktikblick)',
   },
+  {
+    rules: v({ id: 'marseille', name: 'Doppelzug-Schach', doubleMove: true }),
+    short: 'Marseiller Schach: Jede Seite zieht zweimal hintereinander. Doppelte Drohungen sind hier Alltag!',
+    rules_text: [
+      'Weiß beginnt mit einem einzigen Zug, danach macht jede Seite zwei Züge pro Runde.',
+      'Gibt der erste Zug Schach, endet die Runde sofort.',
+      'Wer im Schach steht, muss es mit dem ersten Zug beheben. Sonst normale Regeln.',
+    ],
+    tip: 'Rechne immer zwei gegnerische Züge voraus: Eine Figur, die nur einmal angegriffen ist, kann trotzdem zweimal geschlagen werden.',
+    where: 'Erfunden 1925 in Marseille, beliebt in Fernschach-Kreisen',
+  },
+  {
+    rules: v({ id: 'loecher', name: 'Löcher-Schach', setup: 'rnbqkbnr/pppppppp/8/2*2*2/2*2*2/8/PPPPPPPP/RNBQKBNR w' }),
+    short: 'Vier schwarze Löcher im Zentrum: Niemand kann sie betreten oder überqueren.',
+    rules_text: [
+      'Die Felder c4, f4, c5 und f5 sind Löcher – gesperrt für alle Figuren, auch Springer können dort nicht landen.',
+      'Läufer, Türme und Damen kommen nicht über Löcher hinweg. Springer springen darüber.',
+      'Sonst normale Regeln.',
+    ],
+    tip: 'Die Löcher blockieren die klassischen Läuferdiagonalen. Springer werden dadurch wertvoller.',
+    where: 'Eigene Chessty-Variante (in der Werkstatt mit eigenen Löchern nachbaubar)',
+  },
+  {
+    rules: v({ id: 'aufstand', name: 'Bauernaufstand', setup: '1nn1k1n1/4p3/8/8/8/8/PPPPPPPP/4K3 w', castling: false }),
+    short: 'Acht Bauern gegen drei Springer: Wer bricht durch?',
+    rules_text: [
+      'Weiß hat König und acht Bauern, Schwarz König, drei Springer und einen Bauern.',
+      'Normale Schachregeln, keine Rochade.',
+    ],
+    tip: 'Als Weiß: Bauern in Ketten vorrücken, damit sie sich gegenseitig decken – Springer hassen breite Bauernfronten.',
+    where: 'Klassische Lichess-Stellung „Peasants\' Revolt“',
+  },
 ];
 
 export const variantById = (id: string) => VARIANTS.find((x) => x.rules.id === id);

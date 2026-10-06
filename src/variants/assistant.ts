@@ -139,6 +139,9 @@ export function describeRules(r: Rules, d?: Design): string[] {
   if (r.promoteWins) out.push('Wer zuerst einen Bauern umwandelt, gewinnt.');
   if (r.moveLimit) out.push(`Nach ${r.moveLimit} Zügen gewinnt, wer mehr Material hat.`);
   if (r.noMovesLoses) out.push('Wer keinen Zug mehr hat, verliert.');
+  if (r.doubleMove) out.push('Doppelzug: Jede Seite zieht zweimal (der allererste Zug ist einfach, ein Schach beendet die Runde).');
+  const holes = (r.setup.split(' ')[0].match(/\*/g) ?? []).length;
+  if (holes) out.push(`${holes} Löcher im Brett: gesperrte Felder, die niemand betreten oder überqueren kann.`);
   if (r.stalemateWins && !r.antichess) out.push('Wer patt gesetzt ist, gewinnt.');
   if (!r.castling) out.push('Keine Rochade.');
   if (!r.pawnDouble) out.push('Bauern ziehen immer nur ein Feld.');
@@ -285,6 +288,15 @@ export function parseIdea(text: string, start: Design = emptyDesign()): ParseRes
       r.captureWin = cw[0];
       hit(`Wer alle ${NAMES_[cw[0]] ?? cw[0]} des Gegners schlägt, gewinnt`);
     }
+    if (/doppelzug|zwei züge|2 züge|zweimal ziehen|marseille/.test(s)) {
+      r.doubleMove = true;
+      hit('Doppelzug: zwei Züge pro Runde');
+    }
+    if (/löcher|loch im brett|schwarze löcher|gesperrte felder/.test(s)) {
+      d.base = 'custom';
+      d.customFen = 'rnbqkbnr/pppppppp/8/2*2*2/2*2*2/8/PPPPPPPP/RNBQKBNR w';
+      hit('Vier Löcher im Zentrum');
+    }
     if (/horde|nur bauern gegen|36 bauern|bauernarmee/.test(s)) {
       d.base = 'horde';
       hit('Horde-Aufstellung');
@@ -422,6 +434,8 @@ export async function parseWithBrowserAi(text: string): Promise<ParseResult | nu
 
 /** Beispiele als Anregung */
 export const IDEAS = [
+  'Doppelzug: Jeder zieht zweimal. Wer 3 Schachgebote gibt, gewinnt.',
+  'Schwarze Löcher im Brett und Läufer werden zu Kamelen.',
   'Springer werden zu Kamelen. Wer die Dame des Gegners schlägt, gewinnt.',
   'Kleines Brett 6x6 und Schlagzwang.',
   'Breites Brett 10x8. Nach 30 Zügen gewinnt, wer mehr Material hat.',

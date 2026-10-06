@@ -26,6 +26,7 @@ const BLOCKS: { name: string; apply: (d: Design) => void }[] = [
   { name: 'Materialschlacht', apply: (d) => (d.rules.moveLimit = 25) },
   { name: 'Ente', apply: (d) => Object.assign(d.rules, { duck: true, kingSafety: false, stalemateWins: true }) },
   { name: 'Umwandlung gewinnt', apply: (d) => (d.rules.promoteWins = true) },
+  { name: 'Doppelzug', apply: (d) => (d.rules.doubleMove = true) },
 ];
 const SWAPS = ['a', 'c', 'h', 'l', 'z', 'm'];
 const NAMES1 = ['Wirbel', 'Sturm', 'Rätsel', 'Funken', 'Nebel', 'Donner', 'Glanz', 'Echo', 'Zauber'];

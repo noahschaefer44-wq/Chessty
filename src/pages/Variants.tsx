@@ -81,7 +81,7 @@ function Overview() {
         <div className="kicker">Schach anders</div>
         <h1>Varianten</h1>
         <p className="muted">
-          Die beliebtesten Schachvarianten von Lichess und Chess.com, Klassiker auf kleinen und großen Brettern – jeweils gegen fünf Bots
+          Die beliebtesten Schachvarianten von Lichess und Chess.com, Klassiker auf kleinen und großen Brettern – jeweils gegen sechs Bots
           von „Küken“ bis „Meister“. Oder erfinde deine eigene Variante: mit eigenen Figuren, Brettgrößen und Siegbedingungen.
         </p>
         <a className="btn primary" href="#/varianten/werkstatt">Eigene Variante erfinden <span className="arrow">→</span></a>
@@ -279,7 +279,9 @@ function Builder({ initial }: { initial: Design | null }) {
   }
   function paint(s: number) {
     if (d.base !== 'custom' || !preview) return;
-    const cells = parseSetup(d.customFen, BASE_RULES).b.slice();
+    const parsed = parseSetup(d.customFen, BASE_RULES);
+    const cells: (string | null)[] = parsed.b.slice();
+    for (const h of parsed.holes ?? []) cells[h] = '*';
     cells[s] = brush === '.' ? null : cells[s] === brush ? null : brush;
     set({ customFen: cellsToFen(cells, preview.w, preview.h, d.customFen.split(' ')[1] ?? 'w') });
   }
@@ -332,7 +334,10 @@ function Builder({ initial }: { initial: Design | null }) {
                       })}
                     </div>
                   ))}
-                  <button className={'btn small' + (brush === '.' ? ' primary' : '')} onClick={() => setBrush('.')}>Radierer</button>
+                  <div className="row" style={{ marginTop: 4 }}>
+                    <button className={'btn small' + (brush === '*' ? ' primary' : '')} onClick={() => setBrush('*')}>Loch setzen</button>
+                    <button className={'btn small' + (brush === '.' ? ' primary' : '')} onClick={() => setBrush('.')}>Radierer</button>
+                  </div>
                 </div>
                 <div className="row" style={{ marginTop: 10 }}>
                   <label className="field" style={{ margin: 0 }}>Breite
@@ -469,6 +474,7 @@ function Builder({ initial }: { initial: Design | null }) {
                 </label>
                 {toggle('castling', 'Rochade erlaubt')}
                 {toggle('pawnDouble', 'Bauern-Doppelschritt')}
+                {toggle('doubleMove', 'Doppelzug (zwei Züge pro Runde)')}
               </div>
             </div>
           </div>
