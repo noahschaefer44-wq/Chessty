@@ -71,7 +71,7 @@ for (const l of lessons) {
     const fen = pos[i].shown;
     const tag = `${l.id} #${i + 1}`;
     const best = await evalFen(fen);
-    for (const sol of s.solution) {
+    for (const [k, sol] of s.solution.entries()) {
       try {
         new Chess(fen).move(sol);
       } catch {
@@ -81,7 +81,10 @@ for (const l of lessons) {
       const sc = await scoreAfter(fen, sol);
       const loss = Math.min(best.score, 3000) - Math.min(sc, 3000);
       const bestSan = new Chess(fen).move({ from: best.best.slice(0, 2), to: best.best.slice(2, 4), promotion: best.best[4] })?.san;
-      if (loss > 80 && !(sc > 900)) warn(`${tag}: Lösung ${sol} = ${sc}, Engine-Bestzug ${bestSan} = ${best.score}`);
+      // Hauptlösung: höchstens 1 Bauer schlechter (Engine-Schwankung), Alternativen 1,5. Beide klar gewonnen (≥ 3 Bauern) zählt immer als richtig.
+      const tol = k === 0 ? 100 : 150;
+      const bothWinning = sc >= 300 && best.score >= 300;
+      if (loss > tol && !(sc > 900) && !bothWinning) warn(`${tag}: Lösung ${sol} = ${sc}, Engine-Bestzug ${bestSan} = ${best.score}`);
     }
     if (s.reply) {
       const c = new Chess(fen);
