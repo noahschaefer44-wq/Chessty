@@ -143,6 +143,15 @@ export default function Profile() {
           </div>
         </div>
         <div className="row">
+          <span style={{ width: 160 }}>Lerntempo</span>
+          <div className="seg">
+            {([['auto', 'Automatisch'], ['ruhig', 'Ruhig'], ['manuell', 'Per Knopf']] as const).map(([k, l]) => (
+              <button key={k} className={p.pace === k ? 'on' : ''} onClick={() => update((x) => ({ ...x, pace: k }))}>{l}</button>
+            ))}
+          </div>
+          <span className="muted" style={{ fontSize: 13 }}>Lektionen gehen nach dem Lesen von selbst weiter</span>
+        </div>
+        <div className="row">
           <span style={{ width: 160 }}>Herzen</span>
           <div className="seg">
             <button className={p.heartsEnabled ? 'on' : ''} onClick={() => update((x) => ({ ...x, heartsEnabled: true }))}>An</button>

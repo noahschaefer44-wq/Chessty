@@ -592,3 +592,8 @@ html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; out
 
 /* Netlify-Badge (vom Hoster eingeblendet) nicht über die mobile Leiste legen */
 @media (max-width: 820px) { #nl-badge-frame { bottom: calc(68px + env(safe-area-inset-bottom)) !important; } }
+
+/* Automatisch weiter: Zeitbalken über dem Weiter-Knopf */
+.autonext { display: grid; gap: 8px; }
+.autonext-bar { height: 4px; background: var(--g3); overflow: hidden; }
+.autonext-bar i { display: block; height: 100%; background: var(--fg); }

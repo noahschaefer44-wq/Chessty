@@ -7,6 +7,12 @@ const LABEL: Record<Tab, string> = { short: 'Kurz', why: 'Warum?', pro: 'Profi' 
 // Merkt sich die zuletzt gewählte Tiefe über Schritte hinweg
 let remembered: Tab = 'short';
 
+/** Der Text, den der Nutzer in der gewählten Tiefe gerade sieht (für die Lesezeit). */
+export const shownText = (t: ExplainT) => t[remembered] ?? t.short;
+
+/** Signal an AutoNext: Nutzer liest/hört gerade genauer hin → automatisches Weitergehen anhalten. */
+export const pauseAuto = () => window.dispatchEvent(new Event('chessty-reading'));
+
 /** Erklärung in drei Tiefen, zwischen denen man umschalten kann. */
 export default function Explain({ text, title }: { text: ExplainT; title?: string }) {
   const [tab, setTab] = useState<Tab>(remembered);
@@ -31,6 +37,7 @@ export default function Explain({ text, title }: { text: ExplainT; title?: strin
             onClick={() => {
               remembered = t;
               setTab(t);
+              pauseAuto();
             }}
           >
             <span>{LABEL[t]}</span>
@@ -39,7 +46,7 @@ export default function Explain({ text, title }: { text: ExplainT; title?: strin
       </div>
       <div className="explain-body" key={active + text.short}>
         {'speechSynthesis' in window && (
-          <button className="speak" title="Vorlesen" aria-label="Vorlesen" onClick={() => speak(text[active] ?? text.short)}>🔊</button>
+          <button className="speak" title="Vorlesen" aria-label="Vorlesen" onClick={() => { pauseAuto(); speak(text[active] ?? text.short); }}>🔊</button>
         )}
         <Rich text={text[active] ?? text.short} />
       </div>

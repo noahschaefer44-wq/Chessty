@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAdmin, registerAdminActions } from '../lib/admin';
 import { Chess } from 'chess.js';
 import Board from '../components/Board';
-import Explain, { Rich } from '../components/Explain';
+import Explain, { Rich, shownText, pauseAuto } from '../components/Explain';
 import { EvalBar, Legend } from '../components/Widgets';
 import { lessonById, lessons } from '../content';
 import { LEVELS, CATEGORIES, type Explain as ExplainT, type MoveStep } from '../content/types';
@@ -17,6 +17,7 @@ import { sound } from '../lib/sound';
 import { useKeys } from '../lib/useKeys';
 import { explainWrongMove, type WrongMoveInfo } from '../lib/wrongMove';
 import WrongMovePanel from '../components/WrongMovePanel';
+import AutoNext, { readingMs } from '../components/AutoNext';
 
 type Phase = 'show' | 'task' | 'solved';
 
@@ -307,6 +308,11 @@ export default function LessonPlayer({ id }: { id: string }) {
   }
 
   const text: ExplainT = step.kind === 'info' ? step.text : step.prompt;
+  const autoActive = !explore && !wrong && (phase === 'solved' || (phase === 'show' && step.kind === 'info'));
+  const autoMs =
+    phase === 'solved'
+      ? readingMs(feedback?.text.short ?? '', prog.pace, step.kind === 'move' && step.reply ? 1000 : 0)
+      : readingMs(shownText(text), prog.pace, step.play?.length ? 450 + step.play.length * 650 : 0);
   const arrows = explore
     ? lines[0]?.pv[0] ? [lines[0].pv[0].slice(0, 4)] : []
     : phase === 'solved'
@@ -390,13 +396,13 @@ export default function LessonPlayer({ id }: { id: string }) {
               <b>{feedback.good ? '✓ Richtig! ' : '✕ '}</b>
               <Rich text={feedback.text.short} />
               {feedback.text.why && (
-                <details>
+                <details onToggle={(e) => e.currentTarget.open && pauseAuto()}>
                   <summary style={{ cursor: 'pointer' }}>Warum?</summary>
                   <Rich text={feedback.text.why} />
                 </details>
               )}
               {feedback.text.pro && (
-                <details>
+                <details onToggle={(e) => e.currentTarget.open && pauseAuto()}>
                   <summary style={{ cursor: 'pointer' }}>Profi-Vertiefung</summary>
                   <Rich text={feedback.text.pro} />
                 </details>
@@ -442,13 +448,14 @@ export default function LessonPlayer({ id }: { id: string }) {
             >
               {explore ? 'Engine aus' : 'Warum nicht …? ausprobieren'}
             </button>
-            <span className="spacer" />
-            {(phase === 'show' || phase === 'solved') && (
-              <button className="btn primary" onClick={next} disabled={phase === 'show' && step.kind === 'move'}>
-                {idx + 1 < total ? 'Weiter' : 'Abschließen'} <span className="arrow">→</span>
-              </button>
-            )}
           </div>
+          <AutoNext
+            active={autoActive}
+            ms={autoMs}
+            onNext={next}
+            resetKey={idx + '-' + phase}
+            label={idx + 1 < total ? 'Weiter' : 'Abschließen'}
+          />
           <Legend />
         </aside>
       </div>

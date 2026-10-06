@@ -14,6 +14,7 @@ import { useEngine } from '../lib/useEngine';
 import { sound } from '../lib/sound';
 import { useWrongMove } from '../lib/useWrongMove';
 import WrongMovePanel from '../components/WrongMovePanel';
+import AutoNext from '../components/AutoNext';
 
 type State = 'loading' | 'playing' | 'solved' | 'failed' | 'done';
 const RUSH_TIME = 180;
@@ -294,13 +295,16 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
               </button>
             )}
             <span className="spacer" />
-            {!rush && state !== 'playing' && (
+            {!rush && state === 'failed' && (
               <button className="btn primary" onClick={next}>
                 {i + 1 < round.length ? 'Nächstes' : 'Auswertung'} <span className="arrow">→</span>
               </button>
             )}
             {rush && <button className="btn small" onClick={() => setState('done')}>Beenden</button>}
           </div>
+          {/* Gelöst: automatisch zum nächsten Puzzle; nach Fehlern bleibt Zeit zum Nachlesen */}
+          <AutoNext active={!rush && state === 'solved' && !explore} ms={2600} onNext={next} resetKey={i}
+            label={i + 1 < round.length ? 'Nächstes' : 'Auswertung'} />
           <a className="mono muted" style={{ fontSize: 12 }} href={`https://lichess.org/training/${pz.id}`} target="_blank" rel="noreferrer">
             Puzzle {pz.id} auf Lichess
           </a>

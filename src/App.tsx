@@ -180,9 +180,17 @@ export default function App() {
       const q = questsFor(today()).find((x) => x.id === (e as CustomEvent<string>).detail);
       if (q) push({ icon: '✓', title: 'Tagesquest erledigt', text: `${q.text} · +${q.xp} XP` });
     };
+    // Fehler nicht still schlucken: kurze Meldung statt eines kaputten Zustands ohne Hinweis
+    const onError = (e: Event) => push({ icon: '!', title: 'Fehler', text: (e as CustomEvent<string>).detail });
+    const onRejection = (e: PromiseRejectionEvent) =>
+      push({ icon: '!', title: 'Etwas hat nicht geklappt', text: String((e.reason as Error)?.message ?? e.reason).slice(0, 160) });
     window.addEventListener('chessty-badge', onBadge);
     window.addEventListener('chessty-quest', onQuest);
+    window.addEventListener('chessty-error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
     return () => {
+      window.removeEventListener('chessty-error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
       window.removeEventListener('chessty-badge', onBadge);
       window.removeEventListener('chessty-quest', onQuest);
     };

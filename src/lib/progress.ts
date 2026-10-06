@@ -17,6 +17,9 @@ export interface ReviewCard {
   reps: number;
 }
 
+/** Lerntempo: automatisch weiter, ruhiger (mehr Lesezeit) oder nur per Knopf */
+export type Pace = 'auto' | 'ruhig' | 'manuell';
+
 export interface Progress {
   xp: number;
   streak: number;
@@ -36,6 +39,7 @@ export interface Progress {
   sound: boolean;
   boardTheme: 'grau' | 'kontrast' | 'papier' | 'schiefer';
   animSpeed: number;
+  pace: Pace;
   // Gamification
   heartsEnabled: boolean;
   hearts: number;
@@ -75,6 +79,7 @@ const initial: Progress = {
   sound: true,
   boardTheme: 'grau',
   animSpeed: 220,
+  pace: 'auto',
   heartsEnabled: false,
   hearts: 5,
   heartsAt: 0,

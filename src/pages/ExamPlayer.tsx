@@ -11,12 +11,15 @@ import { sound } from '../lib/sound';
 import { confetti } from '../lib/confetti';
 import { useWrongMove } from '../lib/useWrongMove';
 import WrongMovePanel from '../components/WrongMovePanel';
+import AutoNext, { readingMs } from '../components/AutoNext';
+import { useProgress } from '../lib/progress';
 
 /** Kapitelprüfung (kind = 'kapitel', arg = 'taktik-2') oder Wiederholung (kind = 'wdh', arg = Lektions-ids). */
 export default function ExamPlayer({ kind, arg }: { kind: string; arg: string }) {
   const chapter = kind === 'kapitel';
   const [cat, lvlStr] = chapter ? arg.split('-') : ['', ''];
   const ids = chapter ? chapterIds(cat as Category, Number(lvlStr) as Level) : arg.split(',');
+  const { pace } = useProgress();
   const items = useMemo(() => pick(itemsFrom(ids), chapter ? 8 : 6), [arg]); // eslint-disable-line react-hooks/exhaustive-deps
   const [i, setI] = useState(0);
   const [fen, setFen] = useState(items[0]?.fen ?? '');
@@ -120,10 +123,14 @@ export default function ExamPlayer({ kind, arg }: { kind: string; arg: string })
           {answer && !answer.ok && wm.wrong && (
             <WrongMovePanel san={wm.wrong.san} info={wm.wrong.info} loading={wm.wrong.loading} onReplay={wm.replay} />
           )}
-          <div className="row">
-            <span className="spacer" />
-            {answer && <button className="btn primary" onClick={next}>{i + 1 < items.length ? 'Weiter' : 'Auswertung'} <span className="arrow">→</span></button>}
-          </div>
+          {answer && !answer.ok && (
+            <div className="row">
+              <span className="spacer" />
+              <button className="btn primary" onClick={next}>{i + 1 < items.length ? 'Weiter' : 'Auswertung'} <span className="arrow">→</span></button>
+            </div>
+          )}
+          <AutoNext active={!!answer?.ok} ms={readingMs(item.success.short, pace)} onNext={next} resetKey={i}
+            label={i + 1 < items.length ? 'Weiter' : 'Auswertung'} />
           <p className="muted" style={{ fontSize: 13 }}>{chapter ? 'Nur ein Versuch pro Frage. Bestehen ab 75 %.' : 'Kurze Wiederholung der letzten Lektionen.'}</p>
         </aside>
       </div>
