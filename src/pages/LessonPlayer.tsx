@@ -292,9 +292,16 @@ export default function LessonPlayer({ id }: { id: string }) {
             </div>
           </div>
         )}
+        <div className="panel" style={{ maxWidth: 640, margin: '0 auto 26px', textAlign: 'left' }}>
+          <div className="panel-head"><b>Jetzt anwenden</b></div>
+          <div className="panel-body">
+            <p style={{ marginTop: 0 }}>Gleiche Idee, neue Stellungen: gespiegelte Aufgaben, echte Partiestellungen{lesson.category !== 'taktik' && lesson.category !== 'grundlagen' ? ' und eine Stellung zum Ausspielen gegen den Computer' : ''}.</p>
+            <a className="btn primary" href={'#/praxis/' + lesson.id}>Praxisteil starten <span className="arrow">→</span></a>
+          </div>
+        </div>
         <div className="row" style={{ justifyContent: 'center' }}>
           {nextLesson && (
-            <a className="btn primary" href={'#/lektion/' + nextLesson.id}>
+            <a className="btn" href={'#/lektion/' + nextLesson.id}>
               Nächste: {nextLesson.title} <span className="arrow">→</span>
             </a>
           )}

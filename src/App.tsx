@@ -6,6 +6,9 @@ import { confetti } from './lib/confetti';
 import { today } from './lib/progress';
 import Home from './pages/Home';
 const LessonPlayer = lazy(() => import('./pages/LessonPlayer'));
+const LessonPractice = lazy(() => import('./pages/LessonPractice'));
+const Coach = lazy(() => import('./pages/Coach'));
+const DailyPlan = lazy(() => import('./components/DailyPlan'));
 const Learn = lazy(() => import('./pages/Learn'));
 const Puzzles = lazy(() => import('./pages/Puzzles'));
 const PuzzleSession = lazy(() => import('./pages/PuzzleSession'));
@@ -56,6 +59,7 @@ const NAV = [
   { path: 'varianten', label: 'Varianten', ico: '✦' },
 ];
 const MORE = [
+  { path: 'plan', label: 'Tagesplan' },
   { path: 'community', label: 'Community' },
   { path: 'analyse', label: 'Partieanalyse' },
   { path: 'fehlerheft', label: 'Fehlerheft' },
@@ -77,6 +81,18 @@ function page(r: string[]) {
       return <Learn category={r[1]} />;
     case 'lektion':
       return <LessonPlayer id={r[1]} />;
+    case 'plan':
+      return (
+        <>
+          <div className="page-head"><div className="kicker">Jeden Tag neu</div><h1>Dein Tagesplan</h1>
+            <p className="muted">Zusammengestellt aus deinem Fehlerheft, deiner Puzzle-Statistik und deinem Lernstand. Erledigte Aufgaben werden automatisch abgehakt.</p></div>
+          <DailyPlan full />
+        </>
+      );
+    case 'coach':
+      return <Coach />;
+    case 'praxis':
+      return <LessonPractice id={r[1]} key={r[1]} />;
     case 'taktik':
       return r[1] ? <PuzzleSession theme={r[1]} mode={r[2]} /> : <Puzzles />;
     case 'eroeffnungen':

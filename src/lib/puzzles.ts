@@ -62,3 +62,15 @@ export async function pickRound(theme: string, band: number, seen: string[], rus
   const chosen = shuffle(fresh.length >= MAX_PER_ROUND ? fresh : pool).slice(0, MAX_PER_ROUND);
   return chosen.map((i) => toPuzzle(db.puzzles[i])).sort((a, b) => a.rating - b.rating);
 }
+
+/** Puzzles zu bestimmten Motiven und Stärkestufen (für Praxisteile und den Tagesplan). */
+export async function pickThemed(themes: string[], bands: number[], n: number, seen: string[] = []): Promise<Puzzle[]> {
+  const db = await loadDb();
+  const seenSet = new Set(seen);
+  const pool = [...new Set(themes.flatMap((t) => bands.flatMap((b) => db.themes[t]?.[b] ?? [])))];
+  const fresh = pool.filter((i) => !seenSet.has(db.puzzles[i][0]));
+  return shuffle(fresh.length >= n ? fresh : pool)
+    .slice(0, Math.min(n, MAX_PER_ROUND))
+    .map((i) => toPuzzle(db.puzzles[i]))
+    .sort((a, b) => a.rating - b.rating);
+}

@@ -23,7 +23,7 @@ export interface Badge {
 }
 
 const doneIn = (p: Progress, cat: string) => lessons.filter((l) => l.category === cat).every((l) => p.lessons[l.id]?.done);
-const doneCount = (p: Progress) => Object.values(p.lessons).filter((l) => l.done).length;
+const doneCount = (p: Progress) => Object.entries(p.lessons).filter(([id, l]) => l.done && !id.includes(':')).length;
 const themeSolved = (p: Progress, t: string) => p.themeStats[t]?.s ?? 0;
 const mastersDone = (p: Progress) => Object.values(p.masters).filter((m) => m.done).length;
 const botWin = (p: Progress, id: string) => (p.botResults[id]?.w ?? 0) > 0;

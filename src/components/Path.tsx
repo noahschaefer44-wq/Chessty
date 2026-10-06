@@ -56,6 +56,9 @@ export default function Path({ lessons }: { lessons: Lesson[] }) {
                 <small>{LEVELS[l.level]}</small>
                 <b>{l.title}</b>
                 {done && <Stars n={p.lessons[l.id].stars} />}
+                {done && (p.lessons['praxis:' + l.id]?.done
+                  ? <small>Praxis ✓</small>
+                  : <a className="mono" style={{ fontSize: 12 }} href={'#/praxis/' + l.id}>Praxis →</a>)}
               </div>
             </div>
           );

@@ -597,3 +597,12 @@ html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; out
 .autonext { display: grid; gap: 8px; }
 .autonext-bar { height: 4px; background: var(--g3); overflow: hidden; }
 .autonext-bar i { display: block; height: 100%; background: var(--fg); }
+
+/* Tagesplan */
+.plan { margin-bottom: 24px; }
+.plan-list { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 6px; }
+.plan-list a { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: var(--line) solid var(--fg); text-decoration: none; transition: transform .18s var(--snap), box-shadow .18s var(--snap); }
+.plan-list a:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--fg); }
+.plan-check { width: 22px; height: 22px; flex: none; border: var(--line) solid var(--fg); display: grid; place-items: center; font-weight: 700; }
+.plan-list li.done a { color: var(--g5); }
+.plan-list li.done .plan-check { background: var(--fg); color: var(--bg); }

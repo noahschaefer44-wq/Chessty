@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { CATEGORIES } from '../content/types';
 import { LESSON_META as lessons, MASTER_COUNT } from '../content/meta';
 import { useProgress, levelFromXp, today } from '../lib/progress';
 import { questsFor, BADGES } from '../lib/game';
 import { Bar, Ring } from '../components/Widgets';
+
+// Tagesplan braucht die Motivnamen – eigener Chunk, damit die Startseite schlank bleibt
+const DailyPlan = lazy(() => import('../components/DailyPlan'));
 
 const TICKER = [
   '„Taktik ist, was man tut, wenn es etwas zu tun gibt. Strategie ist, was man tut, wenn es nichts zu tun gibt.“ – Tartakower',
@@ -81,6 +84,10 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <DailyPlan />
+      </Suspense>
 
       <section className="grid" style={{ marginBottom: 12 }}>
         <div className="card flat">

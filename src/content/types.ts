@@ -79,6 +79,8 @@ export interface Lesson {
   takeaways?: string[];
   /** Eröffnungslektionen: Variante für das Training (SAN, ab Grundstellung) */
   drill?: { name: string; moves: string[]; color: 'white' | 'black' }[];
+  /** Praxisteil (sonst Standard aus practicePlan.ts) */
+  practice?: import('./practicePlan').PracticeSpec;
 }
 
 export interface MasterGame {

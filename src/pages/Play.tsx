@@ -6,12 +6,13 @@ import Board from '../components/Board';
 import { EvalBar } from '../components/Widgets';
 import { Rich } from '../components/Explain';
 import { engine, evalNumber, type EngineLine } from '../lib/engine';
-import { tryMove, sanDe, uciToSan, material, PIECE_VALUE, parseUci } from '../lib/chess';
+import { START_FEN, tryMove, sanDe, uciToSan, material, PIECE_VALUE, parseUci } from '../lib/chess';
 import { useEngine } from '../lib/useEngine';
 import { update, addXp, useProgress, bump, bumpTotal } from '../lib/progress';
 import { sound } from '../lib/sound';
 import { openingName } from '../lib/openings';
 import { judgeMove, Q_LABEL } from '../lib/explainMove';
+import { openCoach } from '../lib/coach';
 
 type Style = 'normal' | 'attack' | 'defend' | 'book' | 'simplify';
 
@@ -432,7 +433,12 @@ export default function Play({ startFen }: { startFen?: string }) {
           {result && (
             <div className="row">
               <button className="btn small" onClick={() => startGame(bot)}>Revanche</button>
-              <button className="btn primary small" onClick={() => {
+              {history.length >= 6 && (
+                <button className="btn primary small" onClick={() => openCoach({ fen: base ?? START_FEN, moves: history, me: color === 'white' ? 'w' : 'b', bot: bot?.name ?? 'Bot' })}>
+                  Fehler-Coach <span className="arrow">→</span>
+                </button>
+              )}
+              <button className="btn small" onClick={() => {
                 try { sessionStorage.setItem('chessty.analyse', game.pgn()); } catch { /* egal */ }
                 location.hash = '#/analyse';
               }}>Analysieren <span className="arrow">→</span></button>
