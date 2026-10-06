@@ -4,7 +4,7 @@ import {
   runAction, taint, type Flag,
 } from '../lib/admin';
 import { update, addXp, getProgress } from '../lib/progress';
-import { lessons } from '../content';
+import { LESSON_META as lessons } from '../content/meta';
 import { BADGES } from '../lib/game';
 import { confetti } from '../lib/confetti';
 

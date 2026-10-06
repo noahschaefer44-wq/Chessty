@@ -15,10 +15,19 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Typecheck
-        run: npx tsc -b
+        run: npm run typecheck
+      - name: Unit-Tests
+        run: npm test
       - name: Build
         run: npx vite build
+      - name: Rauchtest im Browser
+        run: |
+          npx playwright install --with-deps chromium
+          (npx vite preview --port 4173 &) && sleep 3
+          npm run e2e
       - name: Fachbegriffe prüfen
         run: npx tsx scripts/validate-glossary.ts
+      - name: Varianten-Engine prüfen
+        run: npx tsx scripts/variants-check.ts
       - name: Lektionen mit Stockfish prüfen
         run: npx tsx scripts/validate-content.ts

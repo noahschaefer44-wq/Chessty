@@ -1,4 +1,4 @@
-import type { Lesson } from '../content/types';
+import type { LessonMeta as Lesson } from '../content/types';
 import { LEVELS } from '../content/types';
 import { useProgress } from '../lib/progress';
 import { Stars } from './Widgets';

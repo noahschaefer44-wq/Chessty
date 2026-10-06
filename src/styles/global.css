@@ -589,3 +589,6 @@ html.adm-terminal body { font-family: var(--mono) !important; text-shadow: 0 0 6
 html.adm-terminal body * { font-family: var(--mono) !important; }
 html.adm-slowmo *, html.adm-slowmo *::before, html.adm-slowmo *::after { transition-duration: 1.6s !important; animation-duration: 3s !important; }
 html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; outline-offset: -1px; }
+
+/* Netlify-Badge (vom Hoster eingeblendet) nicht über die mobile Leiste legen */
+@media (max-width: 820px) { #nl-badge-frame { bottom: calc(68px + env(safe-area-inset-bottom)) !important; } }

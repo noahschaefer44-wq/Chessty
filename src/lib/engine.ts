@@ -47,7 +47,16 @@ class Engine {
         else if (line === 'readyok') resolve();
         this.listener?.(line);
       };
-      this.worker.onerror = (e) => reject(e);
+      this.worker.onerror = (e) => {
+        reject(e);
+        // Abgestürzte Engine: Worker verwerfen, beim nächsten Auftrag neu starten und Nutzer informieren
+        this.worker?.terminate();
+        this.worker = null;
+        this.ready = null;
+        this.busy = false;
+        this.queue = [];
+        window.dispatchEvent(new CustomEvent('chessty-error', { detail: 'Die Schach-Engine ist abgestürzt und wird neu gestartet.' }));
+      };
       this.send('uci');
     });
     return this.ready;

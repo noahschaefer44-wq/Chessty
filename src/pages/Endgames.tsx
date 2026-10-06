@@ -1,4 +1,4 @@
-import { lessons } from '../content';
+import { LESSON_META as lessons } from '../content/meta';
 import { PRACTICE } from '../content/practice';
 import { LEVELS } from '../content/types';
 import { useProgress } from '../lib/progress';

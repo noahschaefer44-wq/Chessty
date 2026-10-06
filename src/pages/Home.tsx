@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { CATEGORIES } from '../content/types';
-import { lessons, masters } from '../content';
+import { LESSON_META as lessons, MASTER_COUNT } from '../content/meta';
 import { useProgress, levelFromXp, today } from '../lib/progress';
 import { questsFor, BADGES } from '../lib/game';
 import { Bar, Ring } from '../components/Widgets';
@@ -154,10 +154,10 @@ export default function Home() {
           );
         })}
         <a className="card" href="#/meister">
-          <div className="kicker">{masters.length} Partien</div>
+          <div className="kicker">{MASTER_COUNT} Partien</div>
           <h3>Meisterpartien</h3>
           <p className="muted">Spiele wie Tal, Fischer, Morphy & Kasparov – finde ihre Züge.</p>
-          <Bar value={Object.values(p.masters).filter((m) => m.done).length} max={masters.length} />
+          <Bar value={Object.values(p.masters).filter((m) => m.done).length} max={MASTER_COUNT} />
         </a>
       </div>
 

@@ -99,3 +99,6 @@ export interface MasterGame {
   notes?: Record<number, string>;
   outro: Explain;
 }
+
+/** Schlanke Lektions-Übersicht (ohne Schritte) für Lernpfad und Startseite, siehe meta.ts */
+export type LessonMeta = Pick<Lesson, 'id' | 'title' | 'category' | 'level' | 'summary'>;

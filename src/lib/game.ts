@@ -1,7 +1,6 @@
 // Gamification: Abzeichen und Tagesquests. Nur Typ-Import von Progress, um Zyklen zu vermeiden.
 import type { Progress } from './progress';
-import { lessons, masters } from '../content';
-import { GLOSSARY } from '../content/glossary';
+import { LESSON_META as lessons, MASTER_COUNT, GLOSSARY_COUNT } from '../content/meta';
 
 export interface DayStats {
   date: string;
@@ -83,11 +82,11 @@ export const BADGES: Badge[] = [
   { id: 'analyse-1', name: 'Selbstkritik', text: 'Eine Partie analysiert.', icon: '⌕', check: (p) => p.totals.analyses >= 1 },
   // Meister & Wissen
   { id: 'meister-1', name: 'Schüler der Meister', text: 'Eine Meisterpartie nachgespielt.', icon: '★', check: (p) => mastersDone(p) >= 1 },
-  { id: 'meister-alle', name: 'Schachhistoriker', text: 'Alle Meisterpartien nachgespielt.', icon: '★★', check: (p) => mastersDone(p) >= masters.length },
+  { id: 'meister-alle', name: 'Schachhistoriker', text: 'Alle Meisterpartien nachgespielt.', icon: '★★', check: (p) => mastersDone(p) >= MASTER_COUNT },
   { id: 'einstufung', name: 'Standortbestimmung', text: 'Den Einstufungstest gemacht.', icon: '◎', check: (p) => p.placementDone },
   { id: 'pruefung-1', name: 'Bestanden', text: 'Eine Kapitelprüfung bestanden.', icon: '✓', check: (p) => Object.values(p.exams).some((e) => e.passed) },
   { id: 'trainer-5', name: 'Allrounder', text: '5 verschiedene Trainer ausprobiert.', icon: '✚', check: (p) => Object.keys(p.trainerBest).length >= 5 },
-  { id: 'glossar', name: 'Fachsprache', text: `Das Fachbegriffe-Heft mit ${GLOSSARY.length} Begriffen entdeckt.`, icon: '≡', check: (p) => (p.trainerBest['glossar'] ?? 0) > 0 },
+  { id: 'glossar', name: 'Fachsprache', text: `Das Fachbegriffe-Heft mit ${GLOSSARY_COUNT} Begriffen entdeckt.`, icon: '≡', check: (p) => (p.trainerBest['glossar'] ?? 0) > 0 },
 ];
 
 export interface Quest {

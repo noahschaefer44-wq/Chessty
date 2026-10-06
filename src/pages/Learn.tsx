@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, LEVELS, type Level } from '../content/types';
-import { lessons } from '../content';
+import { LESSON_META as lessons } from '../content/meta';
 import { useProgress } from '../lib/progress';
 import Path from '../components/Path';
 
