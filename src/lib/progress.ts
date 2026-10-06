@@ -179,6 +179,7 @@ export function useProgress(): Progress {
 
 /** XP gutschreiben und Serie (Streak) pflegen. */
 export function addXp(amount: number): void {
+  if (flag('xpBoost')) amount *= 10;
   update((p) => {
     const t = today();
     let streak = p.streak;
@@ -209,6 +210,7 @@ export function addXp(amount: number): void {
 }
 
 export function completeLesson(id: string, stars: number, xp: number): void {
+  if (flag('perfectStars')) stars = 3;
   update((p) => {
     const prev = p.lessons[id];
     return {

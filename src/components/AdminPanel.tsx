@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  FLAGS, useAdmin, useAdminActions, useCurrentFen, setFlag, setOpen, toggleOpen, unlock, lock, endTestMode, setTimeOffset,
+  FLAGS, useAdmin, useAdminActions, useCurrentFen, setFlag, setOpen, toggleOpen, unlock, lock, restoreBackup, hasBackup, dropBackup, setTimeOffset,
   runAction, taint, type Flag,
 } from '../lib/admin';
 import { update, addXp, getProgress } from '../lib/progress';
 import { LESSON_META as lessons } from '../content/meta';
-import { BADGES } from '../lib/game';
+import { BADGES, questsFor } from '../lib/game';
 import { confetti } from '../lib/confetti';
+import { today } from '../lib/progress';
 
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 
-const ROUTES = ['', 'lernen', 'taktik', 'eroeffnungen', 'endspiele', 'meister', 'training', 'spielen', 'varianten', 'varianten/eigene',
-  'analyse', 'fehlerheft', 'begriffe', 'wissen', 'editor', 'tagespuzzle', 'einstufung', 'community', 'online', 'profil', 'rechtliches'];
+const ROUTES = ['', 'lernen', 'taktik', 'eroeffnungen', 'endspiele', 'meister', 'training', 'spielen', 'varianten', 'varianten/werkstatt',
+  'salon', 'plan', 'coach', 'analyse', 'fehlerheft', 'begriffe', 'wissen', 'editor', 'tagespuzzle', 'einstufung', 'community', 'online', 'profil', 'rechtliches'];
 
-/** Geheimes Test-Panel: Strg+Umschalt+Alt+A, Konami-Code oder 7× aufs Logo tippen */
+/** IDs, die alles „erledigt“ machen: Lektionen, Praxisteile, Endspiel-Praxis, Varianten-Einführungen */
+const PRACTICE_IDS = ['kq-k', 'kr-k', 'kbb-k', 'kbn-k', 'kp-k-opp', 'kp-k-draw', 'lucena', 'philidor', 'kq-kp7', 'kpk-abstand', 'kpk-def2', 'falscher-laeufer', 'vancura', 'kq-kr'];
+
+/** Admin-Panel: Strg+Umschalt+Alt+A, Konami-Code oder 7× aufs Logo tippen */
 export default function AdminPanel() {
   const adm = useAdmin();
   const actions = useAdminActions();
@@ -22,13 +26,12 @@ export default function AdminPanel() {
   const [pass, setPass] = useState('');
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const [num, setNum] = useState('1000');
+  const [blob, setBlob] = useState('');
   const seq = useRef<string[]>([]);
   const taps = useRef<number[]>([]);
 
-  const summon = () => (getAdminUnlocked() ? toggleOpen() : setAsk((a) => !a));
-  function getAdminUnlocked() {
-    return adm.unlocked;
-  }
+  const summon = () => (adm.unlocked ? toggleOpen() : setAsk((a) => !a));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -71,6 +74,18 @@ export default function AdminPanel() {
   const prog = (label: string, fn: () => void) => (
     <button className="btn small" onClick={() => { taint(); fn(); flash(label + ' ✓'); }}>{label}</button>
   );
+  const n = Math.max(0, Math.round(Number(num) || 0));
+  const allDone = (stars: number) => update((p) => ({
+    ...p,
+    lessons: {
+      ...p.lessons,
+      ...Object.fromEntries(lessons.flatMap((l) => [[l.id, { done: true, stars }], ['praxis:' + l.id, { done: true, stars }]])),
+      ...Object.fromEntries(PRACTICE_IDS.map((id) => ['practice:' + id, { done: true, stars }])),
+    },
+    exams: Object.fromEntries(['grundlagen', 'taktik', 'strategie', 'eroeffnungen', 'fallen', 'endspiele'].flatMap((c) => [1, 2, 3, 4].map((l) => [`${c}-${l}`, { best: 100, passed: true }]))),
+    placementDone: true,
+    placementLevel: 4,
+  }));
 
   if (ask && !adm.unlocked)
     return (
@@ -103,15 +118,11 @@ export default function AdminPanel() {
           <button onClick={() => navigator.clipboard?.writeText(fen)}>kopieren</button>
         </div>
       )}
-      {adm.unlocked && adm.tainted && !adm.open && (
-        <button className="admin-badge" onClick={() => setOpen(true)} title="Admin-Panel öffnen">TEST</button>
-      )}
       {adm.unlocked && adm.open && (
         <aside className="admin-panel" aria-label="Admin-Panel">
           <div className="admin-head">
             <b>ADMIN</b>
             <span className="spacer" />
-            {adm.tainted && <span className="tag solid" title="Server-Schreibzugriffe sind gesperrt">Testmodus</span>}
             <button className="admin-x" onClick={() => setOpen(false)} aria-label="Panel schließen">✕</button>
           </div>
           <div className="admin-body">
@@ -125,7 +136,7 @@ export default function AdminPanel() {
                     <button key={a.label} className="btn small" onClick={() => { runAction(a); flash(a.label + ' ✓'); }}>{a.label}</button>
                   ))}
                 </div>
-              ) : <p className="muted">Keine Aktionen – öffne eine Bot-Partie, ein Puzzle, eine Lektion oder eine Variante.</p>}
+              ) : <p className="muted">Keine Aktionen – öffne eine Bot-Partie, ein Puzzle, eine Lektion, eine Variante oder ein Spiel im Salon.</p>}
             </section>
 
             {(['Spiel', 'Optik', 'Debug'] as const).map((g) => (
@@ -141,26 +152,65 @@ export default function AdminPanel() {
             ))}
 
             <section>
+              <h4>Werte setzen</h4>
+              <div className="admin-actions">
+                <input aria-label="Zahl" type="number" min={0} value={num} onChange={(e) => setNum(e.target.value)} style={{ width: 90 }} />
+                {prog('= XP', () => update((p) => ({ ...p, xp: n })))}
+                {prog('+ XP', () => addXp(n))}
+                {prog('= Serie', () => update((p) => ({ ...p, streak: n, bestStreak: Math.max(p.bestStreak, n), lastActiveDay: today() })))}
+                {prog('= Puzzle-Wertung', () => update((p) => ({ ...p, puzzleRating: n })))}
+                {prog('= Herzen', () => update((p) => ({ ...p, hearts: Math.min(5, n), heartsAt: Date.now() })))}
+                {prog('= Tagesziel', () => update((p) => ({ ...p, dailyGoal: Math.max(10, n) })))}
+                {prog('= Serienschutz', () => update((p) => ({ ...p, streakFreezes: n })))}
+              </div>
+            </section>
+
+            <section>
               <h4>Fortschritt</h4>
               <div className="admin-actions">
-                {prog('+100 XP', () => addXp(100))}
-                {prog('+1000 XP', () => addXp(1000))}
-                {prog('Serie +7', () => update((p) => ({ ...p, streak: p.streak + 7, bestStreak: Math.max(p.bestStreak, p.streak + 7) })))}
-                {prog('Serienschutz +3', () => update((p) => ({ ...p, streakFreezes: p.streakFreezes + 3 })))}
-                {prog('Herzen voll', () => update((p) => ({ ...p, hearts: 5, heartsAt: Date.now() })))}
-                {prog('Herzen leer', () => update((p) => ({ ...p, heartsEnabled: true, hearts: 0, heartsAt: Date.now() })))}
                 {prog('Tagesziel erfüllen', () => addXp(Math.max(0, getProgress().dailyGoal - getProgress().dailyXp)))}
-                {prog('Alle Lektionen fertig', () => update((p) => ({ ...p, lessons: Object.fromEntries(lessons.map((l) => [l.id, { done: true, stars: 3 }])) })))}
-                {prog('Alle Abzeichen', () => update((p) => ({ ...p, badges: { ...Object.fromEntries(BADGES.map((b) => [b.id, new Date().toISOString().slice(0, 10)])), ...p.badges } })))}
-                {prog('Puzzle-Wertung 2500', () => update((p) => ({ ...p, puzzleRating: 2500 })))}
+                {prog('Tagesquests erledigen', () => update((p) => ({ ...p, questsClaimed: [...new Set([...p.questsClaimed, ...questsFor(today()).map((q) => q.id)])] })))}
+                {prog('Alles erledigt (3 Sterne)', () => allDone(3))}
+                {prog('Alles erledigt (1 Stern)', () => allDone(1))}
+                {prog('Alle Abzeichen', () => update((p) => ({ ...p, badges: { ...Object.fromEntries(BADGES.map((b) => [b.id, today()])), ...p.badges } })))}
+                {prog('Abzeichen löschen', () => update((p) => ({ ...p, badges: {} })))}
+                {prog('Lektionen zurücksetzen', () => update((p) => ({ ...p, lessons: {}, exams: {} })))}
+                {prog('Fehlerheft: alles fällig', () => update((p) => ({ ...p, review: p.review.map((c) => ({ ...c, due: 0 })) })))}
+                {prog('Fehlerheft leeren', () => update((p) => ({ ...p, review: [] })))}
+                {prog('Puzzle-Verlauf leeren', () => update((p) => ({ ...p, puzzleSeen: [] })))}
                 {prog('Einstufung zurücksetzen', () => update((p) => ({ ...p, placementDone: false })))}
               </div>
             </section>
 
             <section>
-              <h4>Zeitreise {adm.timeOffsetDays ? `(${adm.timeOffsetDays > 0 ? '+' : ''}${adm.timeOffsetDays} Tage)` : ''}</h4>
-              <p className="muted">Verschiebt das Datum für Serie, Tagesquests und Herzen. Lädt die Seite neu.</p>
+              <h4>Spielstand</h4>
               <div className="admin-actions">
+                <button className="btn small" onClick={() => { const t = btoa(unescape(encodeURIComponent(JSON.stringify(getProgress())))); setBlob(t); void navigator.clipboard?.writeText(t); flash('Spielstand kopiert'); }}>Exportieren</button>
+                <button className="btn small" onClick={() => {
+                  try {
+                    const p = JSON.parse(decodeURIComponent(escape(atob(blob.trim()))));
+                    taint();
+                    update(() => p);
+                    flash('Spielstand geladen');
+                  } catch {
+                    flash('Ungültiger Text');
+                  }
+                }}>Importieren</button>
+              </div>
+              <textarea className="input mono" aria-label="Spielstand als Text" rows={2} value={blob} onChange={(e) => setBlob(e.target.value)} style={{ width: '100%', fontSize: 11 }} placeholder="Text zum Importieren einfügen" />
+              {hasBackup() && (
+                <div className="admin-actions">
+                  <button className="btn small" onClick={() => restoreBackup()}>Stand vor dem ersten Cheat zurückholen</button>
+                  <button className="btn small ghost" onClick={() => { dropBackup(); flash('Sicherung verworfen'); }}>Sicherung verwerfen</button>
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h4>Zeitreise {adm.timeOffsetDays ? `(${adm.timeOffsetDays > 0 ? '+' : ''}${adm.timeOffsetDays} Tage)` : ''}</h4>
+              <p className="muted">Verschiebt das Datum für Serie, Tagesplan, Tagesvariante, Tagesquests und Herzen. Lädt die Seite neu.</p>
+              <div className="admin-actions">
+                <button className="btn small" onClick={() => setTimeOffset(adm.timeOffsetDays - 1)}>−1 Tag</button>
                 <button className="btn small" onClick={() => setTimeOffset(adm.timeOffsetDays + 1)}>+1 Tag</button>
                 <button className="btn small" onClick={() => setTimeOffset(adm.timeOffsetDays + 2)}>+2 Tage (Serie reißt)</button>
                 <button className="btn small" onClick={() => setTimeOffset(adm.timeOffsetDays + 7)}>+1 Woche</button>
@@ -179,6 +229,7 @@ export default function AdminPanel() {
                 <button className="btn small" onClick={() => window.dispatchEvent(new CustomEvent('chessty-badge', { detail: [BADGES[Math.floor(Math.random() * BADGES.length)].id] }))}>Abzeichen-Toast</button>
                 <button className="btn small" onClick={() => window.dispatchEvent(new CustomEvent('chessty-update'))}>Update-Hinweis</button>
                 <button className="btn small" onClick={() => window.dispatchEvent(new CustomEvent('chessty-admin-crash'))}>Absturz testen</button>
+                <button className="btn small" onClick={() => window.dispatchEvent(new CustomEvent('chessty-error', { detail: 'Test-Fehlermeldung aus dem Admin-Panel.' }))}>Fehler-Hinweis</button>
                 <button className="btn small" onClick={async () => {
                   const keys = await caches?.keys?.();
                   await Promise.all((keys ?? []).map((k) => caches.delete(k)));
@@ -187,22 +238,17 @@ export default function AdminPanel() {
                   flash('Offline-Speicher geleert');
                 }}>Offline-Speicher leeren</button>
                 <button className="btn small" onClick={() => {
-                  let n = 0;
-                  for (let i = 0; i < localStorage.length; i++) n += (localStorage.getItem(localStorage.key(i)!) ?? '').length;
-                  flash(`localStorage: ${(n / 1024).toFixed(1)} KB in ${localStorage.length} Einträgen`);
+                  let total = 0;
+                  for (let i = 0; i < localStorage.length; i++) total += (localStorage.getItem(localStorage.key(i)!) ?? '').length;
+                  flash(`localStorage: ${(total / 1024).toFixed(1)} KB in ${localStorage.length} Einträgen`);
                 }}>Speicher messen</button>
               </div>
             </section>
 
             <section>
-              <h4>Beenden</h4>
-              <p className="muted">
-                {adm.tainted
-                  ? 'Test-Features wurden benutzt: Ranglisten, Liga und Sync sind gesperrt, damit keine Testwerte auf den Server gelangen.'
-                  : 'Noch keine Test-Features benutzt.'}
-              </p>
+              <h4>Panel</h4>
               <div className="admin-actions">
-                <button className="btn small primary" onClick={() => endTestMode()}>Testmodus beenden (echten Fortschritt zurück)</button>
+                <button className="btn small" onClick={() => { (Object.keys(FLAGS) as Flag[]).forEach((f) => setFlag(f, false)); flash('Alle Schalter aus'); }}>Alle Schalter aus</button>
                 <button className="btn small ghost" onClick={lock}>Panel sperren</button>
               </div>
             </section>

@@ -616,3 +616,9 @@ html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; out
 .palette-piece:hover { transform: translate(-1px, -1px); }
 .palette-piece.on { border-color: var(--fg); box-shadow: 3px 3px 0 var(--fg); }
 .piece-editor { border: var(--line) solid var(--fg); padding: 12px; margin-bottom: 12px; }
+
+/* Spielesalon */
+.salon-board { max-width: min(640px, calc(100vh - 160px)); margin: 0 auto; box-shadow: 8px 8px 0 var(--fg); border: 3px solid var(--fg); transition: opacity .2s; }
+.salon-board.thinking { opacity: .9; }
+.salon-svg { display: block; width: 100%; height: auto; user-select: none; }
+.board-col > .salon-svg { max-width: min(640px, calc(100vh - 160px)); margin: 0 auto; border: 3px solid var(--fg); box-shadow: 8px 8px 0 var(--fg); }

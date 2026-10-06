@@ -2,6 +2,7 @@ import type { LessonMeta as Lesson } from '../content/types';
 import { LEVELS } from '../content/types';
 import { useProgress } from '../lib/progress';
 import { Stars } from './Widgets';
+import { flag } from '../lib/admin';
 
 const ICON: Record<string, string> = {
   grundlagen: '♙',
@@ -45,7 +46,7 @@ export default function Path({ lessons }: { lessons: Lesson[] }) {
           const done = !!p.lessons[l.id]?.done;
           // Frei: erledigt, bis 2 Lektionen voraus, oder durch Einstufung / bestandene Prüfung freigeschaltet
           const unlockedByLevel = l.level <= p.placementLevel || !!p.exams[`${l.category}-${l.level - 1}`]?.passed;
-          const locked = !done && nextIdx !== -1 && i > nextIdx + 2 && !unlockedByLevel;
+          const locked = !done && nextIdx !== -1 && i > nextIdx + 2 && !unlockedByLevel && !flag('unlockAll');
           const cls = ['node', done ? 'done' : '', i === nextIdx ? 'next' : '', locked ? 'locked' : ''].join(' ');
           return (
             <div className="node-wrap" key={l.id}>

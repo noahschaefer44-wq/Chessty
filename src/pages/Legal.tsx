@@ -176,6 +176,7 @@ function Cookies() {
           <li><b>Lernfortschritt</b> (XP, Lektionen, Fehlerheft, Einstellungen) – damit dein Fortschritt erhalten bleibt.</li>
           <li><b>Eigene Pfeile, Varianten, Import-Name</b> – nur wenn du diese Funktionen nutzt.</li>
           <li><b>Sync-Code</b> – nur mit Community-Konto.</li>
+          <li><b>Gefundene Lösungen im Spielesalon</b> (Acht Damen) – nur wenn du dort spielst.</li>
           <li><b>Zuletzt gespielte Bot-Partie</b> für Partieanalyse und Fehler-Coach – nur für die Dauer der Sitzung (sessionStorage), danach automatisch gelöscht.</li>
           <li><b>Offline-Speicher</b> (Service Worker) – Programmdateien, Puzzles und Engine, damit die App ohne Internet läuft.</li>
         </ul>

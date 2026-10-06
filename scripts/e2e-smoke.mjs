@@ -7,7 +7,7 @@ const ROUTES = [
   '', 'lernen/grundlagen', 'lernen/eroeffnungen', 'lektion/figuren-wert', 'taktik', 'eroeffnungen', 'eroeffnungen/explorer',
   'eroeffnungen/repertoire', 'eroeffnungen/fallen', 'endspiele', 'meister', 'training', 'training/koordinaten', 'training/fallen', 'spielen',
   'varianten', 'varianten/werkstatt', 'analyse', 'fehlerheft', 'begriffe', 'wissen', 'editor', 'tagespuzzle',
-  'einstufung', 'profil', 'rechtliches', 'mehr', 'plan', 'coach', 'praxis/t-gabel', 'praxis/o-italienisch', 'praxis/e-lucena', 'lektion/f-legal', 'lektion/fa-noah', 'lernen/fallen', 'endspiele/praxis/kq-kr', 'endspiele/praxis/vancura', 'varianten/grand', 'varianten/lektion/atomic', 'varianten/capablanca',
+  'einstufung', 'profil', 'rechtliches', 'mehr', 'plan', 'coach', 'praxis/t-gabel', 'praxis/o-italienisch', 'praxis/e-lucena', 'lektion/f-legal', 'lektion/fa-noah', 'lernen/fallen', 'endspiele/praxis/kq-kr', 'endspiele/praxis/vancura', 'varianten/grand', 'varianten/lektion/atomic', 'varianten/capablanca', 'salon', 'salon/dame', 'salon/muehle', 'salon/vier', 'salon/reversi', 'salon/gomoku', 'salon/springer', 'salon/damen',
 ];
 
 const browser = await chromium.launch(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {});

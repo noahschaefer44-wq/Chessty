@@ -20,7 +20,7 @@ export interface BoardProps {
   /** Pfeil-Kurzschreibweise, z. B. "e2e4", "!d1h5", "?g1f3", "e4" (Kreis) */
   arrows?: string[];
   className?: string;
-  /** Admin-Testmodus: illegale Züge auf diesem Brett erlauben (nur Bot-Partien) */
+  /** Admin-Panel: illegale Züge auf diesem Brett erlauben (nur Bot-Partien) */
   allowFree?: boolean;
 }
 

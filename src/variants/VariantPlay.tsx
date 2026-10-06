@@ -112,14 +112,14 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
 
   useEffect(() => () => cancelBot(), []);
 
-  // Admin-Testmodus
+  // Admin-Panel
   const adm = useAdmin();
   useEffect(() => {
     if (!adm.unlocked || level === null) return;
     return registerAdminActions('variant', [
-      { label: 'Sofort gewinnen', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human, reason: 'Sieg (Testmodus)' }); } },
-      { label: 'Sofort verlieren', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human === 'w' ? 'b' : 'w', reason: 'Niederlage (Testmodus)' }); } },
-      { label: 'Remis', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: 'draw', reason: 'Remis (Testmodus)' }); } },
+      { label: 'Sofort gewinnen', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human, reason: 'Sieg (Admin)' }); } },
+      { label: 'Sofort verlieren', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human === 'w' ? 'b' : 'w', reason: 'Niederlage (Admin)' }); } },
+      { label: 'Remis', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: 'draw', reason: 'Remis (Admin)' }); } },
       { label: 'Nebel lüften / Brett aufdecken', run: () => setReveal(true) },
     ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,4 +1,4 @@
-// Admin-Testmodus: einen beliebigen (auch illegalen) Zug auf einer FEN ausführen.
+// Admin-Panel: einen beliebigen (auch illegalen) Zug auf einer FEN ausführen.
 import { validateFen } from 'chess.js';
 
 export interface ForcedMove {

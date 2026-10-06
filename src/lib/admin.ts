@@ -1,6 +1,6 @@
-// Admin-/Testmodus: geheimes Panel zum Testen (illegale Züge, Sofort-Sieg, Zeitreise, visuelle Spielereien).
-// Sicherheit: Alles läuft nur lokal im Browser. Sobald Test-Features benutzt wurden („markiert“),
-// sendet die App keine Ergebnisse mehr an den Server (Ranglisten, Liga, Sync) – andere Nutzer bleiben unberührt.
+// Admin-Panel des Eigentümers: Cheats, Zeitreise, Optik- und Debug-Werkzeuge mit vollem Zugriff.
+// Alles läuft lokal im Browser. Vor dem ersten Eingriff wird der Fortschritt einmalig gesichert
+// (wiederherstellbar im Panel); Server-Zugriffe bleiben unverändert erlaubt.
 import { useSyncExternalStore } from 'react';
 
 const KEY = 'chessty.admin';
@@ -17,6 +17,12 @@ export const FLAGS = {
   weakBot: { group: 'Spiel', label: 'Bot sabotieren', desc: 'Bots ziehen zufällig.' },
   solutionArrows: { group: 'Spiel', label: 'Lösungspfeile', desc: 'In Puzzles und Lektionen die Lösung anzeigen.' },
   infiniteHearts: { group: 'Spiel', label: 'Unendlich Herzen', desc: 'Fehler kosten keine Herzen.' },
+  xpBoost: { group: 'Spiel', label: 'XP ×10', desc: 'Jede XP-Gutschrift zählt zehnfach.' },
+  unlockAll: { group: 'Spiel', label: 'Alles offen', desc: 'Keine gesperrten Lektionen im Lernpfad.' },
+  perfectStars: { group: 'Spiel', label: 'Immer 3 Sterne', desc: 'Lektionen zählen immer als fehlerfrei.' },
+  showEval: { group: 'Spiel', label: 'Bewertung immer sichtbar', desc: 'Bewertungsbalken in Bot-Partien und Puzzles.' },
+  botBlunder: { group: 'Spiel', label: 'Bot stellt Figuren ein', desc: 'Bots spielen absichtlich den schlechtesten Schlagzug.' },
+  freeUndo: { group: 'Spiel', label: 'Zurücknehmen immer', desc: 'Zug zurück auch mit Schachuhr und nach Partieende.' },
   // Optik
   flip: { group: 'Optik', label: 'Kopfstand', desc: 'Ganze Seite um 180° drehen.' },
   mirror: { group: 'Optik', label: 'Spiegel', desc: 'Seite horizontal spiegeln.' },
@@ -35,14 +41,14 @@ export const FLAGS = {
 } as const;
 export type Flag = keyof typeof FLAGS;
 
-/** Flags, die das Spiel beeinflussen (markieren den Fortschritt als Test) */
-const GAMEPLAY: Flag[] = ['freeMoves', 'clairvoyance', 'freezeClock', 'weakBot', 'solutionArrows', 'infiniteHearts'];
+/** Flags, die das Spiel beeinflussen (vorher wird der Fortschritt einmal gesichert) */
+const GAMEPLAY: Flag[] = ['freeMoves', 'clairvoyance', 'freezeClock', 'weakBot', 'solutionArrows', 'infiniteHearts', 'xpBoost', 'perfectStars', 'botBlunder'];
 
 interface State {
   unlocked: boolean;
   open: boolean;
   flags: Partial<Record<Flag, boolean>>;
-  /** Test-Features benutzt: keine Server-Schreibzugriffe mehr, bis „Testmodus beenden“ */
+  /** Veraltet (früherer Testmodus) – wird ignoriert */
   tainted: boolean;
   timeOffsetDays: number;
 }
@@ -80,19 +86,33 @@ export const useAdmin = () =>
     () => state,
   );
 export const flag = (f: Flag) => state.unlocked && !!state.flags[f];
-/** Server-Schreibzugriffe (Ranglisten, Liga, Sync) blockieren? */
-export const serverBlocked = () => state.tainted;
+/** Server-Schreibzugriffe blockieren? Nein – der Admin hat vollen Zugriff. */
+export const serverBlocked = () => false;
 
-/** Vor der ersten Manipulation den echten Fortschritt sichern */
+/** Vor der ersten Manipulation den echten Fortschritt einmalig sichern (ohne Einschränkungen) */
 export function taint() {
-  if (state.tainted) return;
   try {
     const p = localStorage.getItem(PROGRESS_KEY);
     if (p && !localStorage.getItem(SNAP)) localStorage.setItem(SNAP, p);
   } catch {
     /* egal */
   }
-  set({ tainted: true });
+}
+export const hasBackup = () => {
+  try {
+    return !!localStorage.getItem(SNAP);
+  } catch {
+    return false;
+  }
+};
+/** Sicherung verwerfen (aktueller Stand bleibt) */
+export function dropBackup() {
+  try {
+    localStorage.removeItem(SNAP);
+  } catch {
+    /* egal */
+  }
+  listeners.forEach((l) => l());
 }
 
 export async function unlock(pass: string): Promise<boolean> {
@@ -112,8 +132,8 @@ export function setFlag(f: Flag, on: boolean) {
   set({ flags: { ...state.flags, [f]: on } });
 }
 
-/** Testmodus beenden: echten Fortschritt wiederherstellen, alle Flags aus, Server wieder frei */
-export function endTestMode() {
+/** Gesicherten Fortschritt (vor dem ersten Cheat) wiederherstellen, alle Flags aus */
+export function restoreBackup() {
   try {
     const snap = localStorage.getItem(SNAP);
     if (snap) localStorage.setItem(PROGRESS_KEY, snap);

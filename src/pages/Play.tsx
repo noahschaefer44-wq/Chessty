@@ -13,8 +13,9 @@ import { sound } from '../lib/sound';
 import { openingName } from '../lib/openings';
 import { judgeMove, Q_LABEL } from '../lib/explainMove';
 import { openCoach } from '../lib/coach';
+import { TRAPS } from '../content/traps';
 
-type Style = 'normal' | 'attack' | 'defend' | 'book' | 'simplify';
+type Style = 'normal' | 'attack' | 'defend' | 'book' | 'simplify' | 'trap' | 'gambit' | 'chaos';
 
 interface Bot {
   id: string;
@@ -35,10 +36,15 @@ const BOTS: Bot[] = [
   { id: 'turm', name: 'Turm Tara', elo: '~1600', desc: 'Starker Clubspieler mit gutem Taktikblick.', skill: 8, depth: 8, random: 0, style: 'normal' },
   { id: 'dame', name: 'Dame Doris', elo: '~2000', desc: 'Experte. Spielt positionell und taktisch sauber.', skill: 13, depth: 12, random: 0, style: 'normal' },
   { id: 'koenig', name: 'König Karl', elo: '2500+', desc: 'Volle Engine-Stärke auf hoher Suchtiefe. Viel Glück.', skill: 20, depth: 16, random: 0, style: 'normal' },
+  { id: 'greta', name: 'Großmeisterin Greta', elo: '2800+', desc: 'Die stärkste Stufe: volle Stärke, sehr tiefe Suche. Rechnet länger – und verzeiht nichts.', skill: 20, depth: 22, random: 0, style: 'normal' },
   // Persönlichkeiten
   { id: 'anton', name: 'Angreifer Anton', elo: '~1500', desc: 'Liebt Schachs, Schläge und Opfer. Greift an, auch wenn es riskant ist – übe Verteidigung!', skill: 7, depth: 8, random: 0, style: 'attack' },
   { id: 'vera', name: 'Verteidigerin Vera', elo: '~1500', desc: 'Spielt vorsichtig und solide. Übe, eine gesicherte Stellung zu knacken.', skill: 7, depth: 8, random: 0, style: 'defend' },
   { id: 'olga', name: 'Eröffnungs-Olga', elo: '~1400', desc: 'Spielt nur Najdorf (Schwarz) und London (Weiß) – teste deine Vorbereitung.', skill: 6, depth: 7, random: 0, style: 'book' },
+  { id: 'felix', name: 'Fallen-Felix', elo: '~1100', desc: 'Stellt dir die berühmten Eröffnungsfallen (Légal, Blackburne, Stafford …). Kennst du sie aus den Lektionen?', skill: 5, depth: 6, random: 0, style: 'trap' },
+  { id: 'gerd', name: 'Gambit-Gerd', elo: '~1400', desc: 'Opfert in der Eröffnung Bauern (Königsgambit, Evans, Morra, Albin, Budapester) und greift dann an.', skill: 7, depth: 8, random: 0, style: 'gambit' },
+  { id: 'fritz', name: 'Festungs-Fritz', elo: '~1900', desc: 'Mauert, tauscht nichts Unnötiges und wartet auf deinen Fehler. Übe Geduld und Pläne.', skill: 12, depth: 12, random: 0, style: 'defend' },
+  { id: 'charlie', name: 'Chaos-Charlie', elo: '~1000', desc: 'Völlig unberechenbar: wilde Opfer, seltsame Züge, manchmal genial. Übe, ruhig zu bleiben.', skill: 4, depth: 6, random: 0.12, style: 'chaos' },
   { id: 'emil', name: 'Endspiel-Emil', elo: '~1500', desc: 'Tauscht Figuren, wo er kann, und will ins Endspiel. Übe deine Technik!', skill: 7, depth: 8, random: 0, style: 'simplify' },
 ];
 
@@ -51,6 +57,48 @@ const BOOK: string[][] = [
   ['d4', 'Nf6', 'Bf4', 'g6', 'e3', 'Bg7', 'Nf3', 'O-O', 'Be2', 'd6', 'h3', 'c5', 'c3'],
   ['d4', 'e6', 'Bf4', 'd5', 'e3', 'Nf6', 'Nf3', 'c5', 'c3', 'Nc6', 'Nbd2', 'Bd6', 'Bg3'],
 ];
+
+// Gambit-Gerd: Gambitlinien für beide Farben (SAN ab Grundstellung)
+const GAMBITS: string[][] = [
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'h4'],
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'b4', 'Bxb4', 'c3'],
+  ['e4', 'e5', 'd4', 'exd4', 'c3', 'dxc3', 'Bc4'],
+  ['e4', 'c5', 'd4', 'cxd4', 'c3', 'dxc3', 'Nxc3'],
+  ['d4', 'd5', 'c4', 'e5', 'dxe5', 'd4'],
+  ['d4', 'Nf6', 'c4', 'e5', 'dxe5', 'Ng4'],
+  ['e4', 'e5', 'Nf3', 'Nf6', 'Nxe5', 'Nc6'],
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'Bc5'],
+  ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'f3'],
+];
+// Fallen-Felix: Fallen-Zugfolgen inklusive Bestrafung (die Fehler des Gegners spielt er nie selbst)
+const TRAP_LINES = TRAPS.map((t) => ({ line: t.line, trapper: t.trapper === 'white' ? 0 : 1, blunder: t.blunder }));
+
+/** Buchzug: passende Linie, in der der nächste Zug dem Bot gehört */
+function bookMove(lines: string[][], history: string[], fen: string, own?: (line: string[], i: number) => boolean): string | null {
+  const ok = lines.filter((b) => b.length > history.length && history.every((m, i) => b[i] === m) && (!own || own(b, history.length)));
+  if (!ok.length) return null;
+  const san = ok[Math.floor(Math.random() * ok.length)][history.length];
+  const m = tryMove(new Chess(fen), san);
+  return m ? m.from + m.to + (m.promotion ?? '') : null;
+}
+
+/** Admin: absichtlich einen schlechten Zug spielen (Figur dorthin, wo sie geschlagen werden kann) */
+function blunderMove(fen: string): string {
+  const c = new Chess(fen);
+  const ms = c.moves({ verbose: true });
+  let best = ms[0];
+  let worst = -1;
+  for (const m of ms) {
+    const a = new Chess(fen);
+    a.move(m);
+    const loss = a.moves({ verbose: true }).filter((r) => r.to === m.to).length ? PIECE_VALUE[m.promotion ?? m.piece] : 0;
+    if (loss + Math.random() * 0.5 > worst) {
+      worst = loss;
+      best = m;
+    }
+  }
+  return best.from + best.to + (best.promotion ?? '');
+}
 
 const CLOCKS = [
   { id: 'ohne', label: 'Ohne Uhr', base: 0, inc: 0 },
@@ -80,18 +128,29 @@ async function botMove(bot: Bot, fen: string, history: string[], fromStart: bool
       if (m) return m.from + m.to + (m.promotion ?? '');
     }
   }
-  if (bot.style === 'normal' || bot.style === 'book') return (await engine.analyse(fen, { depth: bot.depth, skill: bot.skill })).best;
+  if (bot.style === 'trap' && fromStart) {
+    const botIdx = c.turn() === 'w' ? 0 : 1;
+    // Nur Linien, in denen der Bot die Falle stellt; der Fehler selbst ist ein Zug des Gegners
+    const u = bookMove(TRAP_LINES.filter((t) => t.trapper === botIdx).map((t) => t.line), history, fen);
+    if (u) return u;
+  }
+  if (bot.style === 'gambit' && fromStart) {
+    const u = bookMove(GAMBITS, history, fen, (_, i) => (i % 2 === 0) === (c.turn() === 'w'));
+    if (u) return u;
+  }
+  if (bot.style === 'normal' || bot.style === 'book' || bot.style === 'trap') return (await engine.analyse(fen, { depth: bot.depth, skill: bot.skill })).best;
   const r = await engine.analyse(fen, { depth: bot.depth, multipv: 5 });
   const white = c.turn() === 'w';
   const score = (l: EngineLine) => evalNumber(l) * (white ? 1 : -1);
   const best = score(r.lines[0]);
-  const tol = bot.style === 'attack' ? 0.9 : 0.5;
+  const tol = bot.style === 'chaos' ? 2.5 : bot.style === 'attack' || bot.style === 'gambit' ? 0.9 : 0.5;
   const cands = r.lines.filter((l) => best - score(l) <= tol);
   const bonus = (l: EngineLine) => {
     const m = new Chess(fen).move(parseUci(l.pv[0])) as Move;
     const after = new Chess(fen);
     after.move(m.san);
-    if (bot.style === 'attack') return (m.san.includes('+') ? 2 : 0) + (m.captured ? 1 : 0) + (after.isCheckmate() ? 10 : 0);
+    if (bot.style === 'attack' || bot.style === 'gambit') return (m.san.includes('+') ? 2 : 0) + (m.captured ? 1 : 0) + (after.isCheckmate() ? 10 : 0);
+    if (bot.style === 'chaos') return Math.random() * 3 + (m.san.includes('+') ? 1 : 0) + (after.isCheckmate() ? 20 : 0);
     if (bot.style === 'defend') return (m.captured ? -1 : 0) + (m.piece === 'k' ? -1 : 0) + (m.san.includes('+') ? -0.5 : 0) + (['a', 'b', 'c', 'f', 'g', 'h'].includes(m.to[0]) && m.piece === 'p' ? -0.5 : 0.5);
     // Vereinfachen: gleichwertige Abtausche bevorzugen
     if (m.captured && PIECE_VALUE[m.captured] >= PIECE_VALUE[m.piece] && m.piece !== 'p') return 3;
@@ -118,7 +177,7 @@ export default function Play({ startFen }: { startFen?: string }) {
   const clock = CLOCKS.find((c) => c.id === clockId)!;
   const [times, setTimes] = useState({ w: 0, b: 0 });
   const tickRef = useRef(Date.now());
-  // Admin-Testmodus: nach illegalen Zügen startet die Partie intern von einer neuen Stellung
+  // Admin-Panel: nach illegalen Zügen startet die Partie intern von einer neuen Stellung
   const [base, setBase] = useState<string | undefined>(initialFen);
   const [prefix, setPrefix] = useState<string[]>([]);
   const adm = useAdmin();
@@ -132,7 +191,8 @@ export default function Play({ startFen }: { startFen?: string }) {
   const fen = game.fen();
   const lastMv = game.history({ verbose: true }).at(-1);
   const myTurn = (game.turn() === 'w' ? 'white' : 'black') === color;
-  const { lines, loading } = useEngine(fen, (helper || clair) && !!bot && myTurn && !result && !judging, 14);
+  const showEval = adm.unlocked && !!adm.flags.showEval;
+  const { lines, loading } = useEngine(fen, (helper || clair || showEval) && !!bot && (myTurn || showEval) && !result && !judging, 14);
 
   useEffect(() => {
     if (!initialFen) openingName(history.slice(0, 16)).then(setName);
@@ -209,7 +269,8 @@ export default function Play({ startFen }: { startFen?: string }) {
     setThinking(true);
     (async () => {
       let u: string;
-      if (flag('weakBot')) {
+      if (flag('botBlunder')) u = blunderMove(fen);
+      else if (flag('weakBot')) {
         const ms = new Chess(fen).moves({ verbose: true });
         const pick = ms[Math.floor(Math.random() * ms.length)];
         u = pick ? pick.from + pick.to + (pick.promotion ?? '') : '';
@@ -235,7 +296,7 @@ export default function Play({ startFen }: { startFen?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history]);
 
-  /** Illegalen Zug ausführen (nur Admin-Testmodus) */
+  /** Illegalen Zug ausführen (nur Admin-Panel) */
   function playIllegal(u: string) {
     const f = forceMove(fen, u);
     if (!f) return;
@@ -243,11 +304,11 @@ export default function Play({ startFen }: { startFen?: string }) {
     if (f.capturedKing) {
       setPrefix([...prefix, ...history, f.label]);
       setHistory([]);
-      finishGame('Du hast den König geschlagen – Sieg (Testmodus).', 'w');
+      finishGame('Du hast den König geschlagen – Sieg (Admin).', 'w');
       return;
     }
     if (!f.valid) {
-      setFeedback({ q: 'Testmodus', text: 'Diese Stellung kann die Engine nicht spielen (z. B. König im Schach des Ziehenden). Probiere einen anderen Zug.' });
+      setFeedback({ q: 'Admin', text: 'Diese Stellung kann die Engine nicht spielen (z. B. König im Schach des Ziehenden). Probiere einen anderen Zug.' });
       return;
     }
     setPrefix([...prefix, ...history, f.label]);
@@ -257,7 +318,7 @@ export default function Play({ startFen }: { startFen?: string }) {
     const mine = color === 'white' ? 'w' : 'b';
     const k = after.board().flat().find((x) => x && x.type === 'k' && x.color === mine);
     if (k && after.isAttacked(k.square, mine === 'w' ? 'b' : 'w')) {
-      finishGame(`${bot?.name} schlägt deinen König – Niederlage (Testmodus).`, 'l');
+      finishGame(`${bot?.name} schlägt deinen König – Niederlage (Admin).`, 'l');
       return;
     }
     setBase(f.fen);
@@ -268,9 +329,9 @@ export default function Play({ startFen }: { startFen?: string }) {
   useEffect(() => {
     if (!bot || !adm.unlocked) return;
     return registerAdminActions('play', [
-      { label: 'Sofort gewinnen', run: () => finishGame('Sieg (Testmodus).', 'w') },
-      { label: 'Sofort verlieren', run: () => finishGame('Niederlage (Testmodus).', 'l') },
-      { label: 'Remis', run: () => finishGame('Remis (Testmodus).', 'd') },
+      { label: 'Sofort gewinnen', run: () => finishGame('Sieg (Admin).', 'w') },
+      { label: 'Sofort verlieren', run: () => finishGame('Niederlage (Admin).', 'l') },
+      { label: 'Remis', run: () => finishGame('Remis (Admin).', 'd') },
       { label: 'Zug aussetzen (Seite wechseln)', run: () => {
         const parts = fen.split(' ');
         parts[1] = parts[1] === 'w' ? 'b' : 'w';
@@ -329,7 +390,7 @@ export default function Play({ startFen }: { startFen?: string }) {
         <div className="page-head">
           <div className="kicker">Übung macht den Meister</div>
           <h1>Gegen Bots spielen</h1>
-          <p className="muted">Sechs Spielstärken und vier Persönlichkeiten. Mit Schachuhr, Tipp-Modus, Kommentar zu jedem Zug und Analyse danach.</p>
+          <p className="muted">Sieben Spielstärken und neun Persönlichkeiten. Mit Schachuhr, Tipp-Modus, Kommentar zu jedem Zug und Analyse danach.</p>
           {initialFen && <p className="tag solid">Startet aus der gewählten Stellung</p>}
           <div className="row" style={{ marginTop: 8 }}>
             <div className="seg">
@@ -346,7 +407,7 @@ export default function Play({ startFen }: { startFen?: string }) {
           {BOTS.filter((b) => b.style === 'normal').map((b, i) => {
             const r = p.botResults[b.id];
             return (
-              <button key={b.id} className={'card' + (i === 5 ? ' inverse' : '')} onClick={() => startGame(b)}>
+              <button key={b.id} className={'card' + (i >= 5 ? ' inverse' : '')} onClick={() => startGame(b)}>
                 <div className="kicker">Elo ca. {b.elo.replace("~", "")} (geschätzt)</div>
                 <h3>{b.name}</h3>
                 <p className="muted" style={{ fontSize: 14 }}>{b.desc}</p>
@@ -396,7 +457,7 @@ export default function Play({ startFen }: { startFen?: string }) {
           <Board fen={fen} orientation={color} movable={!result && myTurn && !judging ? color : undefined} onMove={onMove} allowFree
             lastMove={lastMv ? [lastMv.from, lastMv.to] : undefined} arrows={(helper || clair) && best && myTurn ? [best.slice(0, 4)] : []} />
           {clockBox(mySide, 'Du')}
-          {helper && <EvalBar line={lines[0]} loading={loading} />}
+          {(helper || showEval) && <EvalBar line={lines[0]} loading={loading} />}
         </div>
         <aside className="side">
           <div>
@@ -427,7 +488,7 @@ export default function Play({ startFen }: { startFen?: string }) {
           <div className="row">
             <button className="btn small" onClick={() => setHelper((h) => !h)}>{helper ? 'Tipps aus' : 'Tipps an'}</button>
             <button className="btn small" onClick={() => setComment((h) => !h)}>{comment ? 'Kommentar aus' : 'Kommentar an'}</button>
-            <button className="btn small" disabled={history.length < 2 || !!result || !!clock.base} onClick={() => setHistory(history.slice(0, myTurn ? -2 : -1))}>Zug zurück</button>
+            <button className="btn small" disabled={history.length < 2 || ((!!result || !!clock.base) && !flag('freeUndo'))} onClick={() => { if (result) setResult(''); setHistory(history.slice(0, myTurn ? -2 : -1)); }}>Zug zurück</button>
             {!result && <button className="btn small" onClick={() => finishGame('Du hast aufgegeben.', 'l')}>Aufgeben</button>}
           </div>
           {result && (

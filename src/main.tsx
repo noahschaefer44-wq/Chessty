@@ -1,4 +1,4 @@
-// Zeitreise (Admin-Testmodus) muss vor allem anderen greifen
+// Zeitreise (Admin-Panel) muss vor allem anderen greifen
 import { installTimeTravel } from './lib/admin';
 installTimeTravel();
 import { StrictMode } from 'react';

@@ -162,7 +162,7 @@ export default function PuzzleSession({ theme, mode }: { theme: string; mode?: s
     }, 450);
   }
 
-  // Admin-Testmodus
+  // Admin-Panel
   const adm = useAdmin();
   useEffect(() => {
     if (!adm.unlocked || !pz) return;

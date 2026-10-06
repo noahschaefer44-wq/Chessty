@@ -94,7 +94,7 @@ export default function LessonPlayer({ id }: { id: string }) {
     ArrowLeft: () => idx > 0 && setIdx(idx - 1),
   });
 
-  // Admin-Testmodus
+  // Admin-Panel
   const adm = useAdmin();
   useEffect(() => {
     if (!adm.unlocked || !lesson) return;

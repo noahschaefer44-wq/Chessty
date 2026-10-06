@@ -8,6 +8,7 @@ import Home from './pages/Home';
 const LessonPlayer = lazy(() => import('./pages/LessonPlayer'));
 const LessonPractice = lazy(() => import('./pages/LessonPractice'));
 const Coach = lazy(() => import('./pages/Coach'));
+const Salon = lazy(() => import('./pages/Salon'));
 const DailyPlan = lazy(() => import('./components/DailyPlan'));
 const Learn = lazy(() => import('./pages/Learn'));
 const Puzzles = lazy(() => import('./pages/Puzzles'));
@@ -71,6 +72,7 @@ const MORE = [
   { path: 'einstufung', label: 'Einstufungstest' },
   { path: 'profil', label: 'Profil & Einstellungen' },
   { path: 'rechtliches', label: 'Impressum & Datenschutz' },
+  { path: 'salon', label: '♟ Spielesalon' },
 ];
 const MOBILE = ['', 'taktik', 'training', 'spielen', 'mehr'];
 
@@ -82,6 +84,8 @@ function page(r: string[]) {
       return <Learn category={r[1]} />;
     case 'lektion':
       return <LessonPlayer id={r[1]} />;
+    case 'salon':
+      return <Salon id={r[1]} key={r[1] ?? 'start'} />;
     case 'plan':
       return (
         <>
