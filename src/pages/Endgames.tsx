@@ -16,13 +16,13 @@ const COURSE: { name: string; text: string; lessons: string[]; practice: string[
   {
     name: 'Stufe 2 · Bauernendspiele',
     text: 'Quadratregel, Opposition, Schlüsselfelder – die Grundlage für jedes Endspiel.',
-    lessons: ['e-quadrat', 'e-opposition', 'e-koenig-vor-bauer'],
+    lessons: ['e-quadrat', 'e-opposition', 'e-koenig-vor-bauer', 'e-reti'],
     practice: ['kp-k-opp', 'kpk-abstand', 'kp-k-draw', 'kpk-def2'],
   },
   {
     name: 'Stufe 3 · Turmendspiele',
     text: 'Die häufigsten Endspiele überhaupt. Lucena gewinnt, Philidor und Vancura halten Remis.',
-    lessons: ['e-lucena', 'e-philidor', 'e-vancura'],
+    lessons: ['e-turm-bauer', 'e-lucena', 'e-philidor', 'e-vancura'],
     practice: ['lucena', 'philidor', 'vancura'],
   },
   {

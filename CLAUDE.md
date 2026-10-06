@@ -37,6 +37,7 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
   - `src/components/` – Board (Chessground + Pfeile + Tastatur-Zugeingabe), MiniBoard (statisches SVG-Diagramm), Explain (3 Erklärtiefen, `Rich` = **fett**-Markdown), WrongMovePanel, AdminPanel, ErrorBoundary.
   - `src/content/` – alle Lerninhalte als TypeScript-Daten (siehe unten).
   - `src/lib/` – Logik: `progress.ts` (lokaler Fortschritt, XP/Serie/Herzen/Abzeichen via `useSyncExternalStore`, Key `chessty.progress.v1`), `game.ts` (Abzeichen, Tagesquests), `cloud.ts` (Supabase-RPCs), `accuracy.ts` (Lichess-Genauigkeitsformel), `explainMove.ts`/`wrongMove.ts` (Zugbewertung + Erklärungen), `puzzles.ts`, `openings.ts`, `tablebase.ts`, `admin.ts`, `forceMove.ts`.
+  - `src/salon/` – Spielesalon (Dame, Mühle, Vier gewinnt, Reversi, Fünf in einer Reihe): Regeln je Spiel, gemeinsame Alpha-Beta-KI (`ai.ts`), Rahmen `Shell.tsx`; Seite `src/pages/Salon.tsx` (Route `#/salon`, nur über „Mehr“ verlinkt).
   - `src/variants/` – eigene Regel-Engine für Schachvarianten (`engine.ts`, beliebige Brettgröße: Feld = Reihe·Breite + Linie, Maße in `pos.w/pos.h`; Figuren-Gangarten in `BUILTIN` bzw. `rules.pieces`), KI (`ai.ts`, Alpha-Beta + Ruhesuche, läuft in `ai.worker.ts`), 10 Varianten (`list.ts`), SVG-Brett, Regel-Assistent (`assistant.ts`).
   - `public/data/` – `puzzles.json` (Lichess-Puzzle-Auszug, 30 Motive × 4 Stärken), `openings.json` (Lichess chess-openings, Namen in `src/lib/openingsDe.ts` übersetzt).
   - `scripts/` – Prüf- und Datenskripte; `data-src/` – Rohdaten für Puzzles/Meisterpartien.
@@ -47,6 +48,7 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
 - **Pfeil-Kurzschrift**: `"e2e4"` Pfeil, `"e4"` Kreis, `"!e2e4"` Fehler (grau gestrichelt), `"?e2e4"` Alternative.
 - **Lektions-Übersicht**: `src/content/meta.ts` wird bei build/typecheck automatisch aus allen Lektionen erzeugt – nicht von Hand bearbeiten. Startseite/Lernpfad nutzen nur diese Übersicht.
 - **Praxisteil**: Zuordnung Lektion → Puzzle-Motive/Ausspielen in `src/content/practicePlan.ts` (oder Feld `practice` in der Lektion).
+- **Taktik aus echten Partien**: `src/content/lessons/partien.ts` wird von `scripts/build-puzzle-lessons.ts` aus `public/data/puzzles.json` erzeugt (Stellungen gespiegelt, Lernender spielt Weiß).
 - **Eröffnungsfallen**: Daten in `src/content/traps.ts`; daraus entstehen je zwei Lektionen (`f-<id>` stellen, `fa-<id>` vermeiden).
 - **Danach immer** `npm run validate -- <id>`: Der Validator prüft Legalität, dass Lösungen laut Stockfish gut und `mistakes` wirklich schlecht sind (`soft: true` für prinzipielle Fehler mit kleinem Engine-Unterschied) und Endspiele gegen die Tablebase.
 - **Meisterpartien**: `src/content/masters.ts` (Texte) + `masters-moves.ts` (Züge). **Glossar**: `glossary.ts` + `glossaryFen.ts`. **Wissen**: `knowledge.ts`. **Endspiel-Praxis**: `practice.ts`. **Taktik-Motive**: `themes.ts`.
@@ -70,10 +72,10 @@ CI (`.github/workflows/ci.yml`) führt Typecheck, Build, Glossar- und Inhaltspr�
 - Brett-Züge per Maus: Koordinaten aus `cg-board`-BoundingBox berechnen; alternativ das unsichtbare Tastatur-Feld `.kbd-move input` fokussieren und z. B. `e4` + Enter tippen.
 - Admin-Panel in Tests: `localStorage['chessty.admin'] = {"unlocked":true,"flags":{...},"tainted":true,"timeOffsetDays":0}` setzen und neu laden.
 
-## Admin-/Testmodus (`src/lib/admin.ts`, `src/components/AdminPanel.tsx`)
+## Admin-Panel (`src/lib/admin.ts`, `src/components/AdminPanel.tsx`)
 - Öffnen: Strg+Umschalt+Alt+A, Konami-Code oder 7× aufs Logo; Passphrase nur als SHA-256(`chessty-admin:` + Passphrase) im Code (Passphrase kennt der Eigentümer).
 - Neue Test-Flags in `FLAGS` eintragen (Gruppe Spiel/Optik/Debug); Optik-Flags wirken als CSS-Klasse `adm-<flag>` auf `<html>`. Seiten melden Aktionen mit `registerAdminActions(scope, [...])` (siehe `Play.tsx`).
-- **Invariante**: Jede spielbeeinflussende Aktion ruft `taint()` auf → echter Fortschritt wird gesichert und `cloud.ts` blockiert Server-Schreibzugriffe (`BLOCKED_IN_TEST`). Neue Server-Schreibfunktionen dort ergänzen.
+- Der Eigentümer will vollen Zugriff: **kein Testmodus**, keine Server-Sperre (`serverBlocked()` ist immer false). `taint()` sichert vor dem ersten Eingriff nur still den Fortschritt (im Panel wiederherstellbar). Seiten melden Aktionen mit `registerAdminActions`.
 
 ## Stolperfallen
 - Chessground cached Brettmaße: vor jedem Pointer-Down `api.state.dom.bounds.clear()` (ist in `Board.tsx`). CSS-Transforms auf Vorfahren des Bretts (Kippen/Skalieren) zerstören die Figurenpositionen – deshalb wirkt das 3D-Flag nur auf SVG-Bretter.

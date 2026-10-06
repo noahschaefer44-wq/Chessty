@@ -67,6 +67,18 @@ Messwerte: Haupt-Bundle `index-*.js` 457 KB (144 KB gzip), Supabase-Chunk 214 KB
 - Endspiel-Kurs in 4 Stufen, 5 neue Datenbank-Praxisstellungen, Praxis gespiegelt
 - Varianten-Engine für beliebige Brettgrößen, Märchenfiguren und eigene Figuren; 7 neue Varianten; Werkstatt mit Aufstellungs-Editor, Figuren-Werkstatt und Siegbedingungen; Variante des Tages; geführte Varianten-Einführungen
 
+## Erledigt (zweiter Ausbau, 06.10.2026)
+- Admin-Panel ohne Testmodus, viele neue Cheats und Werkzeuge
+- Fünf neue Bots im normalen Schach (Greta, Fallen-Felix, Gambit-Gerd, Festungs-Fritz, Chaos-Charlie), Varianten-KI mit Transpositionstabelle + Stufe Großmeister
+- Spielesalon mit fünf Brettspielen und zwei Schach-Knobeleien
+- Varianten: Doppelzug (Marseille), Löcher im Brett, Bauernaufstand
+- 8 Taktik-Lektionen aus echten Partien, 7 neue Eröffnungen (Wiener, Vierspringer, Pirc, Alapin, Philidor, Katalanisch, Grünfeld), Réti-Manöver und Turm gegen Bauer – jetzt 98 Lektionen
+
+## Ideen für später
+- Salon: Halma, Go 9×9, Schiffe versenken gegen den Bot
+- Dreiecksmanöver und Läufer-gegen-Springer-Lektionen (Stellungen mit der Datenbank prüfen)
+- Online-Partien im Salon
+
 ## Erledigt (Auszug)
 - Genauigkeit nach Lichess-Formel (geprüft gegen echte Partien)
 - Erklärung falscher Züge überall, inkl. Widerlegung zum Nachspielen

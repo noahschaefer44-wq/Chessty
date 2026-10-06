@@ -59,6 +59,20 @@ export const LESSON_META: LessonMeta[] = [
   "summary": "Ein Zug, zwei Angriffe: das häufigste taktische Motiv."
  },
  {
+  "id": "p-grundreihe",
+  "title": "Grundreihenmatt in echten Partien",
+  "category": "taktik",
+  "level": 1,
+  "summary": "Der König hinter seinen Bauern eingesperrt – ein Turm oder die Dame genügt."
+ },
+ {
+  "id": "p-umwandlung",
+  "title": "Bauern durchbringen",
+  "category": "taktik",
+  "level": 1,
+  "summary": "Ein Bauer kurz vor der Umwandlung ist oft mehr wert als eine Figur."
+ },
+ {
   "id": "t-fesselung",
   "title": "Die Fesselung",
   "category": "taktik",
@@ -85,6 +99,34 @@ export const LESSON_META: LessonMeta[] = [
   "category": "taktik",
   "level": 2,
   "summary": "Drei weitere Mattbilder, die in Partien immer wieder auftauchen."
+ },
+ {
+  "id": "p-doppelschach",
+  "title": "Doppelschach in echten Partien",
+  "category": "taktik",
+  "level": 2,
+  "summary": "Zwei Figuren geben gleichzeitig Schach – der König MUSS ziehen."
+ },
+ {
+  "id": "p-gefangen",
+  "title": "Figuren einfangen",
+  "category": "taktik",
+  "level": 2,
+  "summary": "Wenn eine Figur keine sicheren Felder mehr hat, kann man sie einsammeln."
+ },
+ {
+  "id": "p-verteidigung",
+  "title": "Verteidigen in echten Partien",
+  "category": "taktik",
+  "level": 2,
+  "summary": "Manchmal ist der beste Zug kein Angriff, sondern eine präzise Abwehr."
+ },
+ {
+  "id": "p-erstickt",
+  "title": "Ersticktes Matt in echten Partien",
+  "category": "taktik",
+  "level": 2,
+  "summary": "Der König wird von seinen eigenen Figuren eingemauert – ein Springer setzt matt."
  },
  {
   "id": "t-ablenkung",
@@ -120,6 +162,20 @@ export const LESSON_META: LessonMeta[] = [
   "category": "taktik",
   "level": 3,
   "summary": "Ein Opfer macht den Weg frei – oder verstopft den Weg des Verteidigers."
+ },
+ {
+  "id": "p-koenigsangriff",
+  "title": "Den offenen König angreifen",
+  "category": "taktik",
+  "level": 3,
+  "summary": "Ein König ohne Bauernschutz ist ein Ziel für alle Figuren."
+ },
+ {
+  "id": "p-opfer",
+  "title": "Opfer, die sich lohnen",
+  "category": "taktik",
+  "level": 3,
+  "summary": "Material hergeben, um mehr zurückzubekommen – oder matt zu setzen."
  },
  {
   "id": "t-griechisches-geschenk",
@@ -241,6 +297,27 @@ export const LESSON_META: LessonMeta[] = [
   "summary": "Sofort das Zentrum öffnen: 3.d4 – klar, direkt und leicht zu lernen."
  },
  {
+  "id": "o-wiener",
+  "title": "Wiener Partie",
+  "category": "eroeffnungen",
+  "level": 1,
+  "summary": "Sc3 statt Sf3, dann der Vorstoß f4 – ein Angriffsklassiker für Einsteiger."
+ },
+ {
+  "id": "o-vierspringer",
+  "title": "Vierspringerspiel",
+  "category": "eroeffnungen",
+  "level": 1,
+  "summary": "Alle vier Springer kommen heraus – die einfachste Eröffnung nach den Grundprinzipien."
+ },
+ {
+  "id": "o-philidor",
+  "title": "Philidor-Verteidigung",
+  "category": "eroeffnungen",
+  "level": 1,
+  "summary": "Solide und einfach: …d6 deckt e5, Schwarz baut eine feste Festung auf."
+ },
+ {
   "id": "o-spanisch",
   "title": "Spanische Partie",
   "category": "eroeffnungen",
@@ -290,6 +367,20 @@ export const LESSON_META: LessonMeta[] = [
   "summary": "Gegen das Damengambit: d5 mit c6 stützen – und den Läufer c8 frei behalten."
  },
  {
+  "id": "o-pirc",
+  "title": "Pirc-Verteidigung",
+  "category": "eroeffnungen",
+  "level": 2,
+  "summary": "Schwarz lässt Weiß das Zentrum – und greift es später mit Läufer g7 und Bauernhebeln an."
+ },
+ {
+  "id": "o-alapin",
+  "title": "Sizilianisch: Alapin-Variante",
+  "category": "eroeffnungen",
+  "level": 2,
+  "summary": "Gegen Sizilianisch mit 2.c3: Weiß baut mit d4 ein Bauernzentrum, ohne viel Theorie."
+ },
+ {
   "id": "o-sizilianisch",
   "title": "Sizilianisch Najdorf",
   "category": "eroeffnungen",
@@ -330,6 +421,20 @@ export const LESSON_META: LessonMeta[] = [
   "category": "eroeffnungen",
   "level": 3,
   "summary": "1…f5 gegen 1.d4: Kontrolle über e4 und Königsangriff – ein unausgeglichener Kampf."
+ },
+ {
+  "id": "o-katalanisch",
+  "title": "Katalanische Eröffnung",
+  "category": "eroeffnungen",
+  "level": 3,
+  "summary": "Damengambit mit Fianchetto: Der Läufer g2 übt langfristigen Druck auf den Damenflügel aus."
+ },
+ {
+  "id": "o-gruenfeld",
+  "title": "Grünfeld-Indische Verteidigung",
+  "category": "eroeffnungen",
+  "level": 3,
+  "summary": "Schwarz lässt Weiß ein großes Zentrum bauen – und greift es mit Läufer g7 und …c5 an."
  },
  {
   "id": "f-legal",
@@ -535,6 +640,13 @@ export const LESSON_META: LessonMeta[] = [
   "summary": "Steht dein König vor dem Bauern auf der 6. Reihe, gewinnst du – wenn du weißt, wie."
  },
  {
+  "id": "e-turm-bauer",
+  "title": "Turm gegen Bauer",
+  "category": "endspiele",
+  "level": 2,
+  "summary": "Der Turm gewinnt – wenn er den gegnerischen König abschneidet und der eigene König rechtzeitig kommt."
+ },
+ {
   "id": "e-falscher-laeufer",
   "title": "Der falsche Läufer",
   "category": "endspiele",
@@ -561,6 +673,13 @@ export const LESSON_META: LessonMeta[] = [
   "category": "endspiele",
   "level": 3,
   "summary": "Zwei Bauern mehr – und trotzdem Remis? Warum ungleiche Läufer so remislastig sind."
+ },
+ {
+  "id": "e-reti",
+  "title": "Das Réti-Manöver",
+  "category": "endspiele",
+  "level": 3,
+  "summary": "Ein König verfolgt zwei Ziele gleichzeitig – die berühmteste Endspielstudie der Welt."
  },
  {
   "id": "e-vancura",

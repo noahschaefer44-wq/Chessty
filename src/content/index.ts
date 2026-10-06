@@ -10,16 +10,19 @@ import { endspiele } from './lessons/endspiele';
 import { endspiele2 } from './lessons/endspiele2';
 import { MASTERS } from './masters';
 import { fallen } from './traps';
+import { partien } from './lessons/partien';
+import { eroeffnungen3 } from './lessons/eroeffnungen3';
+import { endspiele3 } from './lessons/endspiele3';
 
 const byLevel = (a: Lesson, b: Lesson) => a.level - b.level;
 
 export const lessons: Lesson[] = [
   ...grundlagen.sort(byLevel),
-  ...[...taktik, ...taktik2].sort(byLevel),
+  ...[...taktik, ...taktik2, ...partien].sort(byLevel),
   ...[...strategie, ...strategie2].sort(byLevel),
-  ...[...eroeffnungen, ...eroeffnungen2].sort(byLevel),
+  ...[...eroeffnungen, ...eroeffnungen2, ...eroeffnungen3].sort(byLevel),
   ...fallen.sort(byLevel),
-  ...[...endspiele, ...endspiele2].sort(byLevel),
+  ...[...endspiele, ...endspiele2, ...endspiele3].sort(byLevel),
 ];
 export const masters: MasterGame[] = MASTERS;
 
