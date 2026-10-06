@@ -23,6 +23,10 @@ export const FLAGS = {
   showEval: { group: 'Spiel', label: 'Bewertung immer sichtbar', desc: 'Bewertungsbalken in Bot-Partien und Puzzles.' },
   botBlunder: { group: 'Spiel', label: 'Bot stellt Figuren ein', desc: 'Bots spielen absichtlich den schlechtesten Schlagzug.' },
   freeUndo: { group: 'Spiel', label: 'Zurücknehmen immer', desc: 'Zug zurück auch mit Schachuhr und nach Partieende.' },
+  botMind: { group: 'Spiel', label: 'Bot-Gedanken lesen', desc: 'Die drei Kandidatenzüge des Bots live sehen – sein geplanter Zug als Pfeil.' },
+  xray: { group: 'Spiel', label: 'Röntgenblick', desc: 'Hängende Figuren beider Seiten in Bot-Partien markieren.' },
+  turbo: { group: 'Spiel', label: 'Turbo-Bot', desc: 'Bots ziehen ohne Bedenkzeit-Pause.' },
+  commentator: { group: 'Spiel', label: 'Kommentator', desc: 'Jeder Zug in Bot-Partien wird vorgelesen.' },
   // Optik
   flip: { group: 'Optik', label: 'Kopfstand', desc: 'Ganze Seite um 180° drehen.' },
   mirror: { group: 'Optik', label: 'Spiegel', desc: 'Seite horizontal spiegeln.' },
@@ -34,6 +38,10 @@ export const FLAGS = {
   terminal: { group: 'Optik', label: 'Terminal', desc: 'Alles in Monospace mit grünem Leuchten.' },
   slowmo: { group: 'Optik', label: 'Zeitlupe', desc: 'Alle Animationen 5× langsamer.' },
   confetti: { group: 'Optik', label: 'Konfetti-Regen', desc: 'Konfetti bei jedem Klick aufs Brett.' },
+  pixel: { group: 'Optik', label: 'Pixel-Look', desc: 'Figuren und Schrift wie in einem alten Videospiel.' },
+  mini: { group: 'Optik', label: 'Mini-Brett', desc: 'Bretter auf Briefmarkengröße schrumpfen.' },
+  drunk: { group: 'Optik', label: 'Verschwommen', desc: 'Alles leicht unscharf – Schach nach der Feier.' },
+  mirrorText: { group: 'Optik', label: 'Spiegelschrift', desc: 'Alle Texte spiegelverkehrt (Bretter bleiben normal).' },
   // Debug
   outline: { group: 'Debug', label: 'Layout-Rahmen', desc: 'Umrisse aller Elemente zeigen.' },
   squareNames: { group: 'Debug', label: 'Feldnamen', desc: 'Jedes Feld mit Namen beschriften.' },

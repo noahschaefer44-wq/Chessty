@@ -622,3 +622,18 @@ html.adm-outline body * { outline: 1px dashed rgba(0, 0, 0, .35) !important; out
 .salon-board.thinking { opacity: .9; }
 .salon-svg { display: block; width: 100%; height: auto; user-select: none; }
 .board-col > .salon-svg { max-width: min(640px, calc(100vh - 160px)); margin: 0 auto; border: 3px solid var(--fg); box-shadow: 8px 8px 0 var(--fg); }
+
+/* Admin-Optik (neu) */
+html.adm-pixel img, html.adm-pixel image, html.adm-pixel cg-board piece { image-rendering: pixelated; }
+html.adm-pixel body { font-family: var(--mono); letter-spacing: .05em; }
+html.adm-mini .board-wrap, html.adm-mini .vboard-wrap, html.adm-mini .salon-board { max-width: 260px !important; }
+html.adm-drunk .main { filter: blur(1.2px); }
+html.adm-mirrorText .side, html.adm-mirrorText .page-head, html.adm-mirrorText .footer { transform: scaleX(-1); }
+
+/* Chat-Blase der Bots */
+.chat-bubble { border: var(--line) solid var(--fg); padding: 10px 14px; position: relative; background: var(--bg); box-shadow: 4px 4px 0 var(--fg); animation: bubble-in .25s var(--snap); }
+.chat-bubble::before { content: ''; position: absolute; left: 18px; top: -9px; width: 14px; height: 14px; background: var(--bg); border-left: var(--line) solid var(--fg); border-top: var(--line) solid var(--fg); transform: rotate(45deg); }
+@keyframes bubble-in { from { transform: translateY(6px); opacity: 0; } }
+
+/* Blindschach: Figuren unsichtbar */
+.board-wrap.blind cg-board piece { opacity: 0; }

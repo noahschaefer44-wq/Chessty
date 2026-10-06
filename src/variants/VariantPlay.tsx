@@ -121,6 +121,11 @@ export default function VariantPlay({ rules, ruleText, tip }: { rules: Rules; ru
       { label: 'Sofort verlieren', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: human === 'w' ? 'b' : 'w', reason: 'Niederlage (Admin)' }); } },
       { label: 'Remis', run: () => { cancelBot(); game.current++; setThinking(false); finish({ winner: 'draw', reason: 'Remis (Admin)' }); } },
       { label: 'Nebel lüften / Brett aufdecken', run: () => setReveal(true) },
+      { label: 'Meine Figuren → Amazonen', run: () => setPos((p) => ({ ...p, b: p.b.map((x) => (x && colorOf(x) === human && 'nbrq'.includes(x.toLowerCase()) ? (human === 'w' ? 'A' : 'a') : x)) })) },
+      { label: 'Gegner: nur noch König', run: () => setPos((p) => ({ ...p, b: p.b.map((x) => (x && colorOf(x) !== human && x.toLowerCase() !== 'k' ? null : x)) })) },
+      { label: 'Gegner-Figuren werden Bauern', run: () => setPos((p) => ({ ...p, b: p.b.map((x, s) => (x && colorOf(x) !== human && 'nbrqachmlzfeu'.includes(x.toLowerCase()) && Math.floor(s / p.w) !== 0 && Math.floor(s / p.w) !== p.h - 1 ? (human === 'w' ? 'p' : 'P') : x)) })) },
+      { label: 'Reserve: 5 Damen', run: () => setPos((p) => ({ ...p, pockets: { ...p.pockets, [human]: { ...p.pockets[human], q: (p.pockets[human].q ?? 0) + 5 } } })) },
+      { label: 'Noch ein Zug für mich', run: () => { cancelBot(); game.current++; setThinking(false); setPos((p) => ({ ...p, turn: human })); } },
     ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adm.unlocked, level, human, pos]);
